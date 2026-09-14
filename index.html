@@ -113,7 +113,7 @@ import * as THREE from 'three';
 const Q=new URLSearchParams(location.search), $=id=>document.getElementById(id);
 window.onerror=(m,src,l,c)=>{document.body.setAttribute('data-err',m+' @'+l+':'+c);};
 const AUTO=Q.has('auto'),MUTE=Q.has('mute'),WARP=Math.min(60,Math.max(1,+Q.get('warp')||1)),HOLDSTRETCH=Q.has('holdstretch');
-const PIN={dawn:.06,day:.3,dusk:.55,night:.82}[Q.get('time')||''] ?? null;
+const PIN={dawn:.06,day:.3,dusk:.55,night:.82}[Q.get('time')||''] ?? (Q.get('p')?+Q.get('p'):null);
 const NORFIX=Q.has('nor')?parseFloat(Q.get('nor')):null;
 const LEAPFAST=Q.get('leap')==='1';
 const METFAST=Q.get('meteor')==='1',METPIN=Q.get('meteor')==='2';
@@ -280,6 +280,15 @@ let waterMat;
   m.position.set(POND.x+Math.cos(a)*rr,.26+i*.07,POND.z+Math.sin(a)*rr);
   m.scale.setScalar(R(6,11));m.userData.rs=(i%2?1:-1)*R(.004,.012);
   scene.add(m);_mists.push(m);}
+ /* stream wisps: thin ribbons sliding slowly downstream */
+ window._mistsS=[];
+ for(let i=0;i<6;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(1,1),_mistMat);
+  m.rotation.x=-Math.PI/2;m.renderOrder=2;m.rotation.z=Math.atan2(.927,-.375);
+  const s0=R(0,9.06),off=R(-.8,.8);
+  m.position.set(19.2+.927*s0+off*.375,.24+i*.05,-4-.375*s0+off*.927);
+  m.scale.set(R(3,5.5),R(1.2,2),1);
+  m.userData={s:s0,off:off,v:R(.25,.5)};
+  scene.add(m);_mistsS.push(m);}
 })();
 /* ---------- stream + taiko-bashi ---------- */
 const BRG={x:23.3,z:-5.6,rot:.35,R:2.6,HA:.8,C:-2.6*Math.cos(.8)+.12};
@@ -660,7 +669,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mo||0).toFixed(2)+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1330,10 +1339,15 @@ function updFx(dt){
      leapKoi.rotation.z=Math.sin(k*Math.PI*2)*.45;}}}
   else if(kl.on){kl.on=false;leapKoi.visible=false;kl.next=t+R(2,4);}}
  /* dawn mist: rolls in at first light, thins as the morning warms */
- const mo=clamp(Math.min(p/.02,(.18-p)/.06),0,1)*.32;
+ /* first light: pre-dawn blue-grey, catching gold as the sun climbs */
+ const mw=clamp((p-.045)/.06,0,1);
+ const mo=clamp(Math.min(p/.02,(.18-p)/.06),0,1)*(.32+.1*mw);window._mo=mo;
+ _mistMat.color.setRGB(lerp(.72,1,mw),lerp(.78,.84,mw),lerp(.86,.6,mw));
  _mistMat.opacity=mo;
  if(mo>0){for(const m of _mists){m.rotation.z+=m.userData.rs;
-  m.position.x+=Math.sin(t*.05+m.position.z)*dt*.12;}}
+  m.position.x+=Math.sin(t*.05+m.position.z)*dt*.12;}
+  for(const m of _mistsS){const u=m.userData;u.s=(u.s+u.v*dt)%9.06;
+   m.position.x=19.2+.927*u.s+u.off*.375;m.position.z=-4-.375*u.s+u.off*.927;}}
  /* furin: chimes when the player passes the stall corner, sways a little */
  const fu=stall.userData.furin;
  if(fu){
