@@ -590,15 +590,16 @@ function makeCat(col,patch){
  const tip=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6),c2);
  tip.position.set(-.02,1.06,-.52);g.add(tip);
  /* feet */
+ let pawR=null;
  for(const sx of[-.14,.14]){const f=new THREE.Mesh(new THREE.SphereGeometry(.1,8,6),c1);
-  f.scale.set(1,.7,1.3);f.position.set(sx,.08,.3);g.add(f);}
+  f.scale.set(1,.7,1.3);f.position.set(sx,.08,.3);g.add(f);if(sx>0)pawR=f;}
  /* bell */
  const bell=new THREE.Mesh(new THREE.SphereGeometry(.07,10,8),mat(0xd9a441,.4,.6));
  bell.position.set(0,.82,.42);g.add(bell);
  /* soft blob shadow */
  const sh=new THREE.Mesh(new THREE.CircleGeometry(.44,20),new THREE.MeshBasicMaterial({color:0x0c0a10,transparent:true,opacity:.28}));
  sh.rotation.x=-Math.PI/2;sh.position.y=.02;g.add(sh);
- g.userData={body,head:hg,tail,tip,sh};
+ g.userData={body,head:hg,tail,tip,sh,pawR};
  return g;
 }
 const player={g:makeCat(0xf4ead0,0xc73e2e),x:0,z:8,dir:Math.PI,hop:0,moving:false,joy:0};
@@ -679,7 +680,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mo||0).toFixed(2)+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mo||0).toFixed(2)+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1321,6 +1322,29 @@ function updFx(dt){
   b.rotation.y=Math.atan2(vx,vz);
   const flap=Math.sin(t*13+u.ph)*.85;u.p1.rotation.z=flap;u.p2.rotation.z=-flap;}
  updBurst(dt);
+ /* paw dip: standing still at the pond rim at dawn or dusk, the cat reaches one paw to the surface */
+ {const P=window._paw=window._paw||{st:'idle',k:0,cool:6,acc:0,hold:0},pw=player.g.userData.pawR;
+  const dPc=Math.hypot(player.x-POND.x,player.z-POND.z);
+  const ph2=phase(),rimOk=dPc>POND.r+.35&&dPc<POND.r+1.35;
+  const calm=state==='play'&&fish.mode==='idle'&&!placing&&(ph2==='dawn'||ph2==='dusk')&&rimOk;
+  if(P.cool>0)P.cool-=dt*(Q.has('paw')?8:1);
+  if(calm&&!player.moving)P.acc+=dt;else if(P.st==='idle')P.acc=0;
+  if(P.st==='idle'&&P.acc>(Q.has('paw')?.4:2.5)&&P.cool<=0){P.st='reach';P.k=0;}
+  if(P.st!=='idle'&&(player.moving||!rimOk))P.st='retract';
+  if(P.st==='reach'){P.k=Math.min(1,P.k+dt/1.1);
+   const want=Math.atan2(POND.x-player.x,POND.z-player.z);
+   let dd=want-player.dir;while(dd>Math.PI)dd-=6.283;while(dd<-Math.PI)dd+=6.283;
+   player.dir+=dd*Math.min(1,dt*3);
+   if(P.k>=1){P.st='hold';P.hold=.6;
+    const ux=(player.x-POND.x)/dPc,uz=(player.z-POND.z)/dPc,tt=Math.max(POND.r-.5,dPc-.62);
+    ripple(POND.x+ux*tt,POND.z+uz*tt);window._koiScat=2.2;}}
+  else if(P.st==='hold'){P.hold-=dt;if(P.hold<=0)P.st='retract';}
+  else if(P.st==='retract'){P.k=Math.max(0,P.k-dt/.9);
+   if(P.k<=0){P.st='idle';P.acc=0;P.cool=R(14,24);}}
+  const kk=P.st==='idle'?0:P.k;
+  if(pw){pw.position.z=.3+.32*kk;pw.position.y=.08-.05*kk;}
+  player.g.rotation.x=.14*kk;
+  window._pawDbg=P.st;}
  /* koi drift - and gather at the rim when the player stands at the water's edge */
  const pdx=player.x-POND.x,pdz=player.z-POND.z;
  const nearPond=state==='play'&&Math.hypot(pdx,pdz)<POND.r+2.5;
@@ -1328,11 +1352,13 @@ function updFx(dt){
  /* soft shapes: most visible at dawn on calm low water, faint at midday, hidden by rain chop */
  const koiVis=(.14+.38*clamp(1-Math.abs(p-.07)/.09,0,1))*(raining()?.45:1);
  window._koiTurns=window._koiTurns||0;
- for(const k of _koi){k.userData.ph+=dt*(.5+.8*k.userData.tw);
-  const ox=POND.x+Math.sin(k.userData.ph)*POND.r*.5;
-  const oz=POND.z+Math.cos(k.userData.ph*.8)*POND.r*.45;
+ const scatF=clamp(window._koiScat||0,0,1);if(window._koiScat>0)window._koiScat-=dt;
+ for(const k of _koi){k.userData.ph+=dt*(.5+.8*k.userData.tw+2.4*scatF);
+  const rrf=1-.45*scatF;
+  const ox=POND.x+Math.sin(k.userData.ph)*POND.r*.5*rrf;
+  const oz=POND.z+Math.cos(k.userData.ph*.8)*POND.r*.45*rrf;
   let gv=k.userData.gv||0;
-  gv=clamp(gv+((nearPond?1:0)-gv)*dt*1.5,0,1);k.userData.gv=gv;
+  gv=clamp(gv+(((nearPond&&scatF<=0)?1:0)-gv)*dt*1.5,0,1);k.userData.gv=gv;
   if(gv>.01){
    const gx=POND.x+Math.sin(pa)*POND.r*.72+Math.sin(k.userData.ph*3)*.5;
    const gz=POND.z+Math.cos(pa)*POND.r*.72+Math.cos(k.userData.ph*3)*.5;
