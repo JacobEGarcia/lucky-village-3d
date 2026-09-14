@@ -509,6 +509,9 @@ let flies;const FLYN=26;const flyData=[];let flyRef;
  const glimMat=new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(gcv),transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
  for(let j=0;j<7;j++){const gm=new THREE.Mesh(new THREE.PlaneGeometry(.5,2.2),glimMat);
   gm.rotation.x=-Math.PI/2;gm.renderOrder=2;gm.visible=false;scene.add(gm);flyRef.push(gm);}
+ /* stream glimmer: smaller trails along the flow for the corridor fireflies */
+ for(let j=0;j<15;j++){const gm=new THREE.Mesh(new THREE.PlaneGeometry(.3,1.2),glimMat);
+  gm.rotation.x=-Math.PI/2;gm.renderOrder=2;gm.visible=false;scene.add(gm);flyRef.push(gm);}
  window._glimMat=glimMat;})();
 /* sakura petals */
 let petals;const PETN=40;const petData=[];
@@ -1241,6 +1244,16 @@ function updFx(dt){
      gm.position.set(rx,.09,rz);
      gm.rotation.z=Math.atan2(dx,dz);
      const pl=1+.3*Math.sin(t*2.1+j*2.3);gm.scale.set(1,pl,1);}
+    else gm.visible=false;}
+   for(let j=0;j<15;j++){const gm=flyRef[7+j];
+    const rx=fp.getX(j),rz=fp.getZ(j);
+    const px=rx-19.2,pz=rz+4;
+    const along=Math.max(0,Math.min(9.06,px*.927+pz*(-.375)));
+    const cx=19.2+along*.927,cz=-4+along*(-.375);
+    if(Math.hypot(rx-cx,rz-cz)<1.0){gm.visible=true;
+     gm.position.set(rx,.08,rz);
+     gm.rotation.z=Math.atan2(.927,-.375);
+     const pl=1+.3*Math.sin(t*2.4+j*1.9);gm.scale.set(1,pl,1);}
     else gm.visible=false;}}
   else for(const gm of flyRef)gm.visible=false;}
  for(const kf of koiFlags){const u=kf.userData,w=windNow();
