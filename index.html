@@ -562,14 +562,16 @@ const postbox=new THREE.Group(),postDrips=[];let postWet=0;
 {const red=new THREE.MeshStandardMaterial({color:0xa43b31,roughness:.72,metalness:.14}),dark=mat(0x2b2524,.72,.2),wear=mat(0xc58a72,.9);
  const body=new THREE.Mesh(new THREE.CylinderGeometry(.58,.62,1.72,18),red);body.position.y=1.08;body.castShadow=true;postbox.add(body);
  const crown=new THREE.Mesh(new THREE.SphereGeometry(.59,18,10,0,6.283,0,1.7),red);crown.position.y=1.94;postbox.add(crown);
+ const snowSlab=new THREE.Mesh(new THREE.BoxGeometry(1.02,.1,.82,4,1,4),new THREE.MeshStandardMaterial({color:0xe9efed,roughness:.96}));snowSlab.geometry.translate(0,.05,0);snowSlab.position.set(0,2.45,0);snowSlab.scale.set(1,.62,1);snowSlab.visible=false;postbox.add(snowSlab);postbox.userData.snowSlab=snowSlab;
  const slot=new THREE.Mesh(new THREE.BoxGeometry(.64,.15,.06),dark);slot.position.set(0,1.66,.58);postbox.add(slot);
  const handle=new THREE.Mesh(new THREE.TorusGeometry(.12,.025,6,14,Math.PI),wear);handle.position.set(0,1.36,.61);handle.rotation.z=Math.PI;postbox.add(handle);
  const base=new THREE.Mesh(new THREE.CylinderGeometry(.72,.72,.13,18),dark);base.position.y=.16;postbox.add(base);
  for(let i=0;i<4;i++){const d=new THREE.Mesh(new THREE.SphereGeometry(.025,5,4),new THREE.MeshBasicMaterial({color:0xc4d6df,transparent:true,opacity:0}));d.scale.y=2.4;d.position.set(Math.cos(i*1.57)*.43,2.16,Math.sin(i*1.57)*.43);postbox.add(d);postDrips.push(d);}
- postbox.position.set(5.7,0,-11.3);postbox.rotation.y=-.2;scene.add(postbox);postbox.userData={red:red};}
+ postbox.position.set(5.7,0,-11.3);postbox.rotation.y=-.2;scene.add(postbox);postbox.userData.red=red;}
 function updPostbox(dt){const q=raining()?1:0;postWet+=(q-postWet)*Math.min(1,dt*2);postbox.userData.red.color.setRGB(lerp(.64,.34,postWet),lerp(.23,.12,postWet),lerp(.19,.12,postWet));postbox.userData.red.roughness=lerp(.72,.3,postWet);
  for(let i=0;i<postDrips.length;i++){const d=postDrips[i],k=(t*(.72+i*.08)+i*.23)%1;d.visible=postWet>.04;d.material.opacity=postWet*(1-k)*.7;d.position.y=2.16-k*.72;}
- window._postDbg=(q?'rain':'dry')+'/'+postWet.toFixed(2)+'/'+postDrips.filter(d=>d.visible).length;}
+ const winter=Q.has('winter')||((day-1)%24)>=18,qa=Q.get('postsnow')==='shot',snowy=qa||(winter&&phase()==='night'&&raining()),warm=qa?0:(winter?clamp((p-.12)/.1,0,1):1),sl=postbox.userData.snowSlab;sl.visible=snowy||warm<1;sl.position.x=warm*.82;sl.position.y=2.45-warm*.62;sl.rotation.z=-warm*.55;sl.material.opacity=1-warm;sl.material.transparent=warm>0;
+ window._postDbg=(q?'rain':'dry')+'/'+postWet.toFixed(2)+'/'+postDrips.filter(d=>d.visible).length+'/'+(snowy?'snow':warm<1?'slide':'bare');}
 /* old village well: stone ring, cedar roof, moss, and one wind-touched bucket */
 const villageWell=new THREE.Group(),wellBucket=new THREE.Group();
 {const stone=mat(0x777a75,.98),wood=mat(0x5b402a,.94),roofm=mat(0x302b2a,.9),moss=mat(0x526348,.98);
@@ -1810,6 +1812,7 @@ if(Q.get('snowpillow')==='shot'){player.x=-3.0;player.z=-7.6;player.dir=Math.PI;
 if(Q.get('stoneice')==='shot'){player.x=26.2;player.z=-1.2;player.dir=Math.PI;}
 if(Q.get('linesnow')==='shot'){player.x=-1.5;player.z=-8.5;player.dir=Math.PI;}
 if(Q.get('plazafrost')==='shot'){player.x=-1;player.z=-7.5;player.dir=Math.PI;}
+if(Q.get('postsnow')==='shot'){player.x=5.7;player.z=-6.7;player.dir=Math.PI;}
 if(Q.get('capcat')==='shot'){player.x=-3.6;player.z=-3;player.dir=Math.PI;}
 if(Q.get('frost')==='shot'){player.x=0;player.z=8;player.dir=Math.PI;}
 if(Q.get('windowcat')==='shot'){player.x=9;player.z=-10;player.dir=Math.PI;}
