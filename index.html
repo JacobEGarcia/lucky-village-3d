@@ -257,7 +257,7 @@ let waterMat;
  /* koi shadows drifting under the surface */
  window._koi=[];
  for(let i=0;i<4;i++){const k=new THREE.Mesh(new THREE.SphereGeometry(.4,8,6),new THREE.MeshBasicMaterial({color:0x12202e,transparent:true,opacity:.5}));
-  k.scale.set(1.6,.3,.7);k.position.set(POND.x,.04,POND.z);k.userData.ph=i*1.9;scene.add(k);_koi.push(k);}
+  k.scale.set(1.6,.3,.7);k.position.set(POND.x,.04,POND.z);k.userData={ph:i*1.9,turn:R(2,7),tw:0};scene.add(k);_koi.push(k);}
  /* the leaping koi - dusk only, Sora's line made true */
  const leapKoi=new THREE.Mesh(new THREE.SphereGeometry(.28,9,7),mat(0xd8552f,.75));
  leapKoi.scale.set(1.55,.62,.62);leapKoi.visible=false;leapKoi.castShadow=true;scene.add(leapKoi);window._leapKoi=leapKoi;
@@ -669,7 +669,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mo||0).toFixed(2)+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' kot='+(window._koiTurns||0)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mo||0).toFixed(2)+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -730,7 +730,7 @@ const bobC=new THREE.Mesh(new THREE.SphereGeometry(.05,8,6),new THREE.MeshBasicM
 bobC.position.y=.07;bobber.add(bobR,bobC);rigG.add(bobber);
 /* ripple rings */
 const rings=[];
-for(let i=0;i<4;i++){const r=new THREE.Mesh(new THREE.TorusGeometry(.3,.02,6,24),
+for(let i=0;i<6;i++){const r=new THREE.Mesh(new THREE.TorusGeometry(.3,.02,6,24),
  new THREE.MeshBasicMaterial({color:0xf2e6c4,transparent:true,opacity:0}));
  r.rotation.x=-Math.PI/2;scene.add(r);rings.push({m:r,a:0});}
 function ripple(x,z){const r=rings.find(r=>r.a<=0);if(!r)return;r.m.position.set(x,.09,z);r.m.scale.setScalar(.4);r.a=1;}
@@ -1315,7 +1315,10 @@ function updFx(dt){
  const pdx=player.x-POND.x,pdz=player.z-POND.z;
  const nearPond=state==='play'&&Math.hypot(pdx,pdz)<POND.r+2.5;
  const pa=Math.atan2(pdx,pdz);
- for(const k of _koi){k.userData.ph+=dt*.5;
+ /* soft shapes: most visible at dawn on calm low water, faint at midday, hidden by rain chop */
+ const koiVis=(.14+.38*clamp(1-Math.abs(p-.07)/.09,0,1))*(raining()?.45:1);
+ window._koiTurns=window._koiTurns||0;
+ for(const k of _koi){k.userData.ph+=dt*(.5+.8*k.userData.tw);
   const ox=POND.x+Math.sin(k.userData.ph)*POND.r*.5;
   const oz=POND.z+Math.cos(k.userData.ph*.8)*POND.r*.45;
   let gv=k.userData.gv||0;
@@ -1325,7 +1328,11 @@ function updFx(dt){
    const gz=POND.z+Math.cos(pa)*POND.r*.72+Math.cos(k.userData.ph*3)*.5;
    k.position.x=lerp(ox,gx,gv);k.position.z=lerp(oz,gz,gv);
   }else{k.position.x=ox;k.position.z=oz;}
-  k.rotation.y=-k.userData.ph;}
+  k.userData.turn-=dt*(Q.has('koit')?6:1);
+  if(k.userData.turn<0){k.userData.turn=R(4,9);k.userData.tw=1;window._koiTurns++;ripple(k.position.x,k.position.z);}
+  if(k.userData.tw>0)k.userData.tw=Math.max(0,k.userData.tw-dt/1.2);
+  k.rotation.y=-k.userData.ph+Math.sin(k.userData.tw*Math.PI)*.9;
+  k.material.opacity=koiVis;}
  /* dusk leaps: one koi arcs out of the pond every few breaths */
  {const kl=window._koiLeap,leapKoi=window._leapKoi;
   if(phase()==='dusk'&&!raining()){
