@@ -349,6 +349,7 @@ function deckY(px,pz){
 /* ---------- structures ---------- */
 const lanterns=[]; /* {mesh, light, pane} for night glow */
 const statueLites=[]; /* placed statue glow, tracked explicitly */
+const koiFlags=[]; /* placed koinobori streamers, animated with the wind */
 function makeTorii(x,z){
  const g=new THREE.Group();const verm=mat(0xc73e2e,.7);
  for(const sx of[-1.9,1.9]){const p=new THREE.Mesh(new THREE.CylinderGeometry(.22,.26,4.6,10),verm);
@@ -951,6 +952,27 @@ const DECOR={
   for(const sx of[-.08,.08]){const e=new THREE.Mesh(new THREE.SphereGeometry(.03,6,5),eyeM);e.position.set(sx,.66,.5);g.add(e);}
   g.position.set(x,0,z);scene.add(g);return g;}},
  sakura:{ja:'桜の木',en:'SAKURA',v:800,make:(x,z)=>makeSakura(x,z,.6)},
+ koinobori:{ja:'こいのぼり',en:'KOINOBORI',v:1200,make:(x,z)=>{
+  const g=new THREE.Group();
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.05,.07,3.6,8),mat(0x4a3a28,.9));
+  pole.position.y=1.8;pole.castShadow=true;g.add(pole);
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(.72,.05,.05),mat(0x4a3a28,.9));
+  arm.position.set(.32,3.52,0);g.add(arm);
+  const carp=new THREE.Group();carp.position.set(.66,3.44,0);carp.rotation.y=-.5;
+  const bm=mat(0xc73e2e,.65);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.3,10,8),bm);head.scale.set(1.25,.8,.8);carp.add(head);
+  const eyeM=mat(0xf2e6c4,.6);
+  for(const sz of[-1,1]){const e=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),eyeM);e.position.set(.26,.08,sz*.17);carp.add(e);}
+  const segs=[];const segR=[.24,.19,.15];
+  for(let i=0;i<3;i++){const s=new THREE.Mesh(new THREE.SphereGeometry(segR[i],8,6),bm);
+   s.scale.set(1.5,.72,.72);
+   const piv=new THREE.Group();piv.position.set(i===0?-.4:-.44,0,0);
+   piv.add(s);
+   if(i===2){const tail=new THREE.Mesh(new THREE.ConeGeometry(.15,.38,6),bm);
+    tail.rotation.z=Math.PI/2;tail.scale.z=.38;tail.position.set(-.3,0,0);piv.add(tail);}
+   (i?segs[i-1]:carp).add(piv);segs.push(piv);}
+  g.add(carp);g.userData.segs=segs;g.userData.carp=carp;g.userData.ph=R(0,6.28);
+  g.position.set(x,0,z);scene.add(g);koiFlags.push(g);return g;}},
  statue:{ja:'金の招き猫',en:'GOLD MANEKI',v:1500,glow:1,make:(x,z)=>{
   const g=makeCat(0xd9a441,0xa97f2f);g.scale.setScalar(.8);
   const base=new THREE.Mesh(new THREE.BoxGeometry(.9,.18,.9),mat(0x8a6a2a,.7));base.position.y=.09;g.add(base);
@@ -961,6 +983,7 @@ let placing=null,ghost=null;
 function startPlace(k){placing=k;
  ghost=DECOR[k].make(0,0);
  const gli=lanterns.indexOf(ghost);if(gli>=0)lanterns.splice(gli,1);
+ const kfi=koiFlags.indexOf(ghost);if(kfi>=0)koiFlags.splice(kfi,1);
  if(ghost.userData.lite){const si=statueLites.indexOf(ghost.userData.lite);if(si>=0)statueLites.splice(si,1);}
  ghost.traverse(o=>{if(o.material){o.material=o.material.clone();o.material.transparent=true;o.material.opacity=.45;}});
  if(ghost.userData.lite)ghost.userData.lite.intensity=0;
@@ -1184,6 +1207,9 @@ function updFx(dt){
    fp.setZ(i,d.az+Math.cos(t*d.s2+d.p2)*d.rz);
    fp.setY(i,clamp(d.y0+Math.sin(t*.8+d.p2)*d.ya,.3,2.6));}
   fp.needsUpdate=true;}
+ for(const kf of koiFlags){const u=kf.userData,w=windNow();
+  for(let i=0;i<u.segs.length;i++)u.segs[i].rotation.z=Math.sin(t*2.8-i*.85+u.ph)*(.05+.17*w);
+  u.carp.rotation.y=-.5+Math.sin(t*.9+u.ph)*.1*w;}
  for(const b of bflies){const u=b.userData,op=Math.max(0,1-dark()*1.6);
   u.wm.opacity=op;if(op<=0){b.visible=false;continue;}b.visible=true;
   const a=t*u.sp+u.ph,vx=-Math.sin(a)*u.r,vz=Math.cos(a)*u.r*.7;
@@ -1238,9 +1264,10 @@ function updFx(dt){
 }
 /* noren strips breathe with the wind - slow base sway, gusts every few seconds */
 let gustT=3,gustV=.6;
+function windNow(){return .6+.4*Math.sin(t*.23)+.5*gustV*Math.max(0,Math.sin(t*1.3));}
 function updNoren(dt){
  gustT-=dt;if(gustT<=0){gustT=R(4,9);gustV=R(.4,1);}
- const w=.6+.4*Math.sin(t*.23)+.5*gustV*Math.max(0,Math.sin(t*1.3));
+ const w=windNow();
  for(const s of norenStrips){const ph=s.userData.ph;
   const sw=.5+.5*Math.sin(t*1.1+ph)+.18*Math.sin(t*2.3+ph*2);
   s.rotation.x=NORFIX!=null?NORFIX:-Math.min(.2,Math.max(0,.13*w*sw));}
