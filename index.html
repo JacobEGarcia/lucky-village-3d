@@ -479,7 +479,7 @@ let starPts;
  starPts=new THREE.Points(gg,new THREE.PointsMaterial({color:0xf2e6c4,size:.5,fog:false,transparent:true,opacity:0}));
  scene.add(starPts);})();
 /* fireflies */
-let flies;const FLYN=26;const flyData=[];
+let flies;const FLYN=26;const flyData=[];let flyRef;
 (function(){const pos=new Float32Array(FLYN*3);
  /* fireflies gather over the water at night: anchors along the stream + pond rim, a few roam the village */
  const SA={x:19.2,z:-4},SB={x:27.6,z:-7.4};
@@ -492,7 +492,18 @@ let flies;const FLYN=26;const flyData=[];
   pos[i*3]=ax;pos[i*3+1]=1;pos[i*3+2]=az;}
  const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.BufferAttribute(pos,3));
  flies=new THREE.Points(gg,new THREE.PointsMaterial({color:0xf0dc8c,size:.22,transparent:true,opacity:0}));
- scene.add(flies);})();
+ scene.add(flies);
+ /* pond glimmer: the rim fireflies' light mirrored on the water at night */
+ const gcv=document.createElement('canvas');gcv.width=gcv.height=64;
+ const gg2=gcv.getContext('2d');
+ const ggr=gg2.createRadialGradient(32,32,2,32,32,32);
+ ggr.addColorStop(0,'rgba(240,220,140,.85)');ggr.addColorStop(.5,'rgba(240,220,140,.28)');ggr.addColorStop(1,'rgba(240,220,140,0)');
+ gg2.fillStyle=ggr;gg2.fillRect(0,0,64,64);
+ flyRef=[];
+ const glimMat=new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(gcv),transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
+ for(let j=0;j<7;j++){const gm=new THREE.Mesh(new THREE.PlaneGeometry(.5,2.2),glimMat);
+  gm.rotation.x=-Math.PI/2;gm.renderOrder=2;gm.visible=false;scene.add(gm);flyRef.push(gm);}
+ window._glimMat=glimMat;})();
 /* sakura petals */
 let petals;const PETN=40;const petData=[];
 (function(){const pos=new Float32Array(PETN*3);
@@ -637,7 +648,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' met='+mets+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' met='+mets+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1047,6 +1058,7 @@ function updDay(){
  amb.intensity=dk*.22;amb.color.set(0x8090c0);
  starPts.material.opacity=clamp((dk-.35)*1.7,0,1);
  flies.material.opacity=dk>.5?(dk-.5)*1.7:0;
+ if(window._glimMat)_glimMat.opacity=dk>.5?(dk-.5)*1.5*(1+.18*Math.sin(t*2.3)):0;
  petals.material.opacity=lerp(.9,.15,dk);
  waterMat.color.setRGB(lerp(.17,.09,dk),lerp(.27,.17,dk),lerp(.38,.36,dk));
  /* lanterns + windows + stall lamp */
@@ -1207,7 +1219,17 @@ function updFx(dt){
    fp.setX(i,d.ax+Math.sin(t*d.s1+d.p1)*d.rx);
    fp.setZ(i,d.az+Math.cos(t*d.s2+d.p2)*d.rz);
    fp.setY(i,clamp(d.y0+Math.sin(t*.8+d.p2)*d.ya,.3,2.6));}
-  fp.needsUpdate=true;}
+  fp.needsUpdate=true;
+  if(_glimMat.opacity>0){
+   for(let j=0;j<7;j++){const i=15+j,gm=flyRef[j];
+    const rx=fp.getX(i),rz=fp.getZ(i);
+    const dx=rx-POND.x,dz=rz-POND.z;
+    if(Math.hypot(dx,dz)<POND.r){gm.visible=true;
+     gm.position.set(rx,.09,rz);
+     gm.rotation.z=Math.atan2(dx,dz);
+     const pl=1+.3*Math.sin(t*2.1+j*2.3);gm.scale.set(1,pl,1);}
+    else gm.visible=false;}}
+  else for(const gm of flyRef)gm.visible=false;}
  for(const kf of koiFlags){const u=kf.userData,w=windNow();
   for(let i=0;i<u.segs.length;i++)u.segs[i].rotation.z=Math.sin(t*2.8-i*.85+u.ph)*(.05+.17*w);
   u.carp.rotation.y=-.5+Math.sin(t*.9+u.ph)*.1*w;}
