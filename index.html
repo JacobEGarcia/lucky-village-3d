@@ -115,6 +115,7 @@ window.onerror=(m,src,l,c)=>{document.body.setAttribute('data-err',m+' @'+l+':'+
 const AUTO=Q.has('auto'),MUTE=Q.has('mute'),WARP=Math.min(60,Math.max(1,+Q.get('warp')||1)),HOLDSTRETCH=Q.has('holdstretch');
 const PIN={dawn:.06,day:.3,dusk:.55,night:.82}[Q.get('time')||''] ?? null;
 const NORFIX=Q.has('nor')?parseFloat(Q.get('nor')):null;
+const LEAPFAST=Q.get('leap')==='1';
 const PLC=Q.get('place');
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,R=(a,b)=>a+Math.random()*(b-a);
 const GOTH='"Avenir Next","Futura","Century Gothic",sans-serif';
@@ -259,7 +260,6 @@ let waterMat;
  /* the leaping koi - dusk only, Sora's line made true */
  const leapKoi=new THREE.Mesh(new THREE.SphereGeometry(.28,9,7),mat(0xd8552f,.75));
  leapKoi.scale.set(1.55,.62,.62);leapKoi.visible=false;leapKoi.castShadow=true;scene.add(leapKoi);window._leapKoi=leapKoi;
- const LEAPFAST=Q.get('leap')==='1';
  window._koiLeap={on:false,t0:0,next:LEAPFAST?0:6,x:0,z:0};
  /* dawn mist over the pond */
  const mcv=document.createElement('canvas');mcv.width=mcv.height=128;
@@ -876,8 +876,11 @@ function updNeighbor(nb,wps,dt){
    const b=$('bub');b.style.display='block';
    b.style.left=((v.x*.5+.5)*innerWidth)+'px';b.style.top=((-v.y*.5+.5)*innerHeight-14)+'px';}
   const gd=nb.gazePh?ph2!==nb.gazePh:(nb.gazeP?(p<nb.gazeP[0]||p>nb.gazeP[1]):(!raining()||ph2==='night'));
-  if(gd){nb.st='pause';nb.timer=1+R(0,2);nb.gazePh=undefined;nb.gazeP=null;nb.napping=false;nb.tending=false;
-   nb.g.userData.head.rotation.x=0;nb.g.userData.head.rotation.y=0;nb.g.userData.body.scale.set(1,1.12,.92);}
+  if(gd){const wasTend=nb.tending;
+   nb.st='pause';nb.timer=1+R(0,2);nb.gazePh=undefined;nb.gazeP=null;nb.napping=false;nb.tending=false;
+   nb.g.userData.head.rotation.x=0;nb.g.userData.head.rotation.y=0;nb.g.userData.body.scale.set(1,1.12,.92);
+   /* closing time: mugi ends the market shift and walks home to take the evening on his engawa */
+   if(wasTend&&nb===mugi&&ph2!=='night'&&!raining()&&nb.seat){nb.st='walk';nb.wp=[nb.seat[0],nb.seat[1]];nb.eveGo=true;}}
   return;
  }
  if(nb.st==='walk'&&nb.wp){
@@ -887,6 +890,7 @@ function updNeighbor(nb,wps,dt){
    else if(nb.duskGaze){nb.duskGaze=false;nb.st='gaze';nb.dir=-1.57;nb.gazePh='dusk';}
    else if(nb.napGo){nb.napGo=false;nb.st='gaze';nb.dir=-1.57;nb.gazePh=null;nb.gazeP=[.22,.38];nb.napping=true;}
    else if(nb.tendGo){nb.tendGo=false;nb.st='gaze';nb.dir=.3;nb.gazePh=null;nb.gazeP=[.16,.46];nb.tending=true;}
+   else if(nb.eveGo){nb.eveGo=false;nb.st='gaze';nb.dir=nb.hdir;nb.gazePh='dusk';}
    else{nb.st=Math.random()<.5?'sit':'pause';nb.timer=2+R(0,4);}nb.wp=null;}
   else{nb.x+=dx/d*sp*dt;nb.z+=dz/d*sp*dt;
    nb.dir=Math.atan2(dx,dz);nb.hop+=dt*(nb.bolt?13:8);}}
