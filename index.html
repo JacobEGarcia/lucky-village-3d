@@ -641,6 +641,16 @@ const GINGKO={x:-7,z:12},gingkoLeaves=[],gingkoFall=[];let gingkoNext=2,gingkoLa
  for(const a of[-.65,0,.7]){const br=new THREE.Mesh(new THREE.CylinderGeometry(.14,.22,3.1,7),bark);br.position.set(Math.sin(a)*.7,5.1,Math.cos(a)*.35);br.rotation.z=a*.45;g.add(br);}
  for(const[x,y,z,s]of[[-1,6,0,1.7],[.8,6.5,.2,1.9],[0,7.25,-.2,1.65],[-.2,5.7,.8,1.5]]){const c=new THREE.Mesh(new THREE.DodecahedronGeometry(s,1),gold);c.position.set(x,y,z);c.castShadow=true;g.add(c);}
  g.position.set(GINGKO.x,0,GINGKO.z);scene.add(g);window._gingko=g;})();
+/* child's torn kite, disclosed only when the gingko crown opens in wind */
+const gingkoKite=new THREE.Group(),kiteTail=[];
+{const ks=new THREE.Shape();ks.moveTo(0,.72);ks.lineTo(.58,0);ks.lineTo(0,-.72);ks.lineTo(-.58,0);ks.closePath();
+ const face=new THREE.Mesh(new THREE.ShapeGeometry(ks),new THREE.MeshBasicMaterial({color:0xb64132,side:THREE.DoubleSide}));gingkoKite.add(face);
+ const ts=new THREE.Shape();ts.moveTo(.2,-.42);ts.lineTo(.56,0);ts.lineTo(.08,-.16);ts.lineTo(.2,-.42);
+ const tear=new THREE.Mesh(new THREE.ShapeGeometry(ts),new THREE.MeshBasicMaterial({color:0x342b25,side:THREE.DoubleSide}));tear.position.z=.012;gingkoKite.add(tear);
+ const spine=new THREE.Mesh(new THREE.BoxGeometry(.035,1.38,.025),mat(0x3f3023,.9));spine.position.z=.025;gingkoKite.add(spine);
+ const bar=new THREE.Mesh(new THREE.BoxGeometry(1.02,.035,.025),mat(0x3f3023,.9));bar.position.z=.025;gingkoKite.add(bar);
+ for(let i=0;i<5;i++){const seg=new THREE.Mesh(new THREE.BoxGeometry(.045,.48,.03),new THREE.MeshBasicMaterial({color:i%2?0xd7b14a:0xe8ded0}));seg.position.y=-.93-i*.43;seg.userData={i:i,base:-.93-i*.43};gingkoKite.add(seg);kiteTail.push(seg);}
+ gingkoKite.position.set(GINGKO.x+1.72,6.52,GINGKO.z-1.35);gingkoKite.rotation.set(-.06,1.5,-.24);gingkoKite.visible=false;scene.add(gingkoKite);}
 function mkGingkoLeaf(x,z,ground){const sh=new THREE.Shape();sh.moveTo(0,0);sh.quadraticCurveTo(-.24,.28,0,.4);sh.quadraticCurveTo(.24,.28,0,0);
  const m=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshBasicMaterial({color:0xd9b447,side:THREE.DoubleSide}));m.scale.setScalar(.65);m.position.set(x,ground?.035:7,z);m.rotation.x=-Math.PI/2;scene.add(m);return m;}
 function landGingko(x,z){const q=mkGingkoLeaf(x,z,true);q.rotation.z=R(0,6.28);gingkoLeaves.push(q);if(gingkoLeaves.length>18){scene.remove(gingkoLeaves.shift());}
@@ -651,6 +661,9 @@ function updGingko(dt){const dawn=phase()==='dawn'&&!raining();if(dawn&&gingkoLa
   if(u.y<=.04){const x=q.position.x,z=q.position.z;scene.remove(q);gingkoFall.splice(i,1);landGingko(x,z);}}
  if(Q.has('gingko')&&gingkoLeaves.length<7)while(gingkoLeaves.length<7)landGingko(GINGKO.x+R(-1.4,1.4),GINGKO.z+R(-.7,.7));
  if(!gingkoGust&&gingkoLeaves.length>=6&&((Q.get('gingko')==='scatter')||(Q.get('gingko')!=='drift'&&windNow()>1.15))){gingkoGust=true;for(let i=0;i<gingkoLeaves.length;i++){const q=gingkoLeaves[i],a=-.4+R(-.35,.35),d=R(1.5,4);q.position.x+=Math.cos(a)*d;q.position.z+=Math.sin(a)*d;q.rotation.z+=R(-1,1);}}
+ const wind=windNow(),open=Q.get('kite')==='shot'||gingkoFall.length>0||wind>1.04;
+ gingkoKite.visible=open;const tailAmp=.04+.14*clamp((wind-.65)/.8,0,1);for(const q of kiteTail){const i=q.userData.i;q.rotation.z=Math.sin(t*(1.7+i*.08)+i*.7)*tailAmp;q.position.x=Math.sin(t*1.35+i*.8)*tailAmp*(i+1)*.32;}
+ window._kiteDbg=(open?'seen':'hidden')+'/'+wind.toFixed(2)+'/'+kiteTail.length;
  window._gingkoDbg=gingkoLeaves.length+'/'+gingkoFall.length+'/'+(gingkoGust?'scatter':'drift');}
 /* ---------- the cat ---------- */
 function makeCat(col,patch){
@@ -770,7 +783,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' kite='+(window._kiteDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1545,7 +1558,8 @@ function updFx(dt){
   window._pawDbg=P.st;}
  /* koi drift - gather for the player, but learn Sora's shadow along the rim */
  const pdx=player.x-POND.x,pdz=player.z-POND.z;
- if(Q.get('koiplip')==='shot'){sora.x=14;sora.z=3.3;sora.st='sit';sora.wp=null;}
+ if(Q.get('kite')==='shot'){player.x=-1;player.z=11;player.dir=-Math.PI/2;}
+if(Q.get('koiplip')==='shot'){sora.x=14;sora.z=3.3;sora.st='sit';sora.wp=null;}
  const sk=window._soraKoi=window._soraKoi||{q:0,near:null,stop:0,mouth:0,lastx:sora.x,lastz:sora.z};
  const sdist=Math.hypot(sora.x-POND.x,sora.z-POND.z),sstep=Q.get('koisora')==='trail'?.2:Math.hypot(sora.x-sk.lastx,sora.z-sk.lastz);sk.lastx=sora.x;sk.lastz=sora.z;
  if(Q.get('koisora')==='mouth'){sk.stop=3;sk.mouth=1;}
@@ -1715,6 +1729,7 @@ requestAnimationFrame(frame);
 /* ---------- init hooks ---------- */
 if(Q.has('play')||AUTO){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');}
 if(Q.get('gaze')==='bridge'){sora.x=BRG.x;sora.z=BRG.z;sora.st='gaze';sora.dir=-1.57;sora.gazePh='dusk';sora.wp=null;sora.bolt=false;sora.duskGaze=false;}
+if(Q.get('kite')==='shot'){player.x=-1;player.z=11;player.dir=-Math.PI/2;}
 if(Q.get('koiplip')==='shot'){sora.x=14;sora.z=3.3;sora.st='sit';sora.timer=30;sora.wp=null;sora.napDay=day;sora.lastPh=phase();window._soraKoi={q:1,near:null,stop:3,mouth:1,lastx:sora.x,lastz:sora.z};player.x=7;player.z=3;}
 if(Q.get('scarecrow')==='shot'){player.x=-13;player.z=11;player.dir=-Math.PI/2;}
 if(Q.get('mist')==='shot'){player.x=4.8;player.z=-1;player.dir=Math.PI/2;}
