@@ -671,6 +671,7 @@ let starPts;
  scene.add(starPts);})();
 /* fireflies */
 let flies;const FLYN=26;const flyData=[];let flyRef;let stillT=0,curQ=0,curN=0,lastpx=0,lastpz=0;const flyMass={q:0,strag:'idle',k:0,done:false};
+const hotaruSeason=()=>Q.has('hotaru')||((day-1)%24>=6&&(day-1)%24<18);
 (function(){const pos=new Float32Array(FLYN*3);
  /* fireflies gather over the water at night: anchors along the stream + pond rim, a few roam the village */
  const SA={x:19.2,z:-4},SB={x:27.6,z:-7.4};
@@ -682,7 +683,7 @@ let flies;const FLYN=26;const flyData=[];let flyRef;let stillT=0,curQ=0,curN=0,l
   flyData.push({ax:ax,az:az,rx:R(.7,1.9),rz:R(.7,1.9),s1:R(.25,.6),s2:R(.2,.5),p1:R(0,6.28),p2:R(0,6.28),y0:R(.5,2.1),ya:R(.2,.6)});
   pos[i*3]=ax;pos[i*3+1]=1;pos[i*3+2]=az;}
  const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.BufferAttribute(pos,3));
- flies=new THREE.Points(gg,new THREE.PointsMaterial({color:0xf0dc8c,size:.22,transparent:true,opacity:0}));
+ flies=new THREE.Points(gg,new THREE.PointsMaterial({color:0xffe882,size:.34,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
  scene.add(flies);
  /* pond glimmer: the rim fireflies' light mirrored on the water at night */
  const gcv=document.createElement('canvas');gcv.width=gcv.height=64;
@@ -1403,7 +1404,7 @@ function updDay(){
  hemi.intensity=lerp(.8,.14,dk);hemi.color.setRGB(c[0],c[1],c[2]);
  amb.intensity=dk*.22;amb.color.set(0x8090c0);
  starPts.material.opacity=clamp((dk-.35)*1.7,0,1);
- flies.material.opacity=dk>.5?(dk-.5)*1.7:0;
+ flies.material.opacity=hotaruSeason()&&dk>.5?(dk-.5)*1.9:0;
  if(window._glimMat)_glimMat.opacity=dk>.5?(dk-.5)*1.5*(1+.18*Math.sin(t*2.3)):0;
  petals.material.opacity=lerp(.9,.15,dk);
  waterMat.color.setRGB(lerp(.17,.09,dk),lerp(.27,.17,dk),lerp(.38,.36,dk));
@@ -1582,6 +1583,7 @@ function updFx(dt){
   if(crikT<0){criks++;const n=3+(Math.random()*3|0),f=R(4100,4600);
    for(let i=0;i<n;i++)setTimeout(()=>tone(f,.045,'square',.006),i*70);
    crikT=R(5,13);}}
+ const hotSeason=hotaruSeason();
  if(flies.material.opacity>0){const fp=flies.geometry.attributes.position;
   /* curiosity: stand still at the water at night and a few drift over for a look */
   const pv=Math.hypot(player.x-lastpx,player.z-lastpz);lastpx=player.x;lastpz=player.z;
@@ -1597,10 +1599,10 @@ function updFx(dt){
      const q=curQ*Math.min(1,(9-dd)/5+.35);
      bx+=(player.x+Math.cos(ha)*hr-bx)*q;bz+=(player.z+Math.sin(ha)*hr-bz)*q;}}
    /* warm-night mass: rim lights breathe together and migrate slowly toward the stream reeds */
-   const massOn=phase()==='night'&&!raining(),mq=massOn?1:0;flyMass.q+=(mq-flyMass.q)*Math.min(1,dt*.35);
+   const massOn=phase()==='night'&&!raining()&&hotSeason,mq=massOn?1:0;flyMass.q+=(mq-flyMass.q)*Math.min(1,dt*.35);
    let by=clamp(d.y0+Math.sin(t*.8+d.p2)*d.ya,.3,2.6);
-   if(i>=15&&i<22&&flyMass.q>.01){const j=i-15,ga=t*.055,prog=(Math.sin(ga)*.5+.5),cx=lerp(POND.x+1.2,19.0,prog),cz=lerp(POND.z+1.0,-4.2,prog);
-    const aa=j/7*6.283+d.p1*.22,rad=1.15+(j%3)*.32;bx=lerp(bx,cx+Math.cos(aa)*rad,flyMass.q);bz=lerp(bz,cz+Math.sin(aa)*rad*.65,flyMass.q);by=lerp(by,1.25+Math.sin(t*.55+j)*.32,flyMass.q);}
+   if(i>=15&&i<22&&flyMass.q>.01){const j=i-15,ga=t*.055+d.p1*.04,prog=Math.sin(ga)*.5+.5,ease=prog*prog*(3-2*prog),cx=lerp(POND.x+.8,21.15,ease),cz=lerp(POND.z+.6,-6.75,ease);
+    const aa=j/7*6.283+d.p1*.22,rad=.75+(j%3)*.26;bx=lerp(bx,cx+Math.cos(aa)*rad,flyMass.q);bz=lerp(bz,cz+Math.sin(aa)*rad*.62,flyMass.q);by=lerp(by,1.15+Math.sin(t*.48+j)*.38,flyMass.q);}
    /* fly 21 becomes the one straggler; it circles Sora once and rejoins */
    if(i===21&&flyMass.strag!=='idle'){const kk=flyMass.k,aa=kk*6.283-Math.PI/2,rr=1.05;
     bx=lerp(bx,sora.x+Math.cos(aa)*rr,Math.sin(kk*Math.PI));bz=lerp(bz,sora.z+Math.sin(aa)*rr,Math.sin(kk*Math.PI));by=lerp(by,1.55+Math.sin(aa*2)*.16,Math.sin(kk*Math.PI));}
@@ -1608,10 +1610,10 @@ function updFx(dt){
    fp.setZ(i,bz+Math.cos(t*d.s2+d.p2)*d.rz*(flyMass.q?.35:1));
    fp.setY(i,by);}
   const soraNear=Math.hypot(sora.x-POND.x,sora.z-POND.z)<9;
-  if(phase()==='night'&&!raining()&&soraNear&&!flyMass.done&&flyMass.strag==='idle'){flyMass.strag='circle';flyMass.k=0;flyMass.done=true;}
+  if(phase()==='night'&&!raining()&&hotaruSeason()&&soraNear&&!flyMass.done&&flyMass.strag==='idle'){flyMass.strag='circle';flyMass.k=0;flyMass.done=true;}
   if(flyMass.strag==='circle'){flyMass.k=Q.get('flymass')==='shot'?.52:Math.min(1,flyMass.k+dt/3.2);sora.dir=Math.atan2(fp.getX(21)-sora.x,fp.getZ(21)-sora.z);sora.g.rotation.y=sora.dir;sora.g.userData.head.rotation.x=-.12;window._flyStrag='circle';
    if(flyMass.k>=1){flyMass.strag='idle';sora.g.userData.head.rotation.x=0;window._flyStrag='rejoin';}}
-  window._flyMassDbg=Math.round(flyMass.q*100)+'/'+flyMass.strag;
+  window._flyMassDbg=(hotSeason?'season':'off')+'/'+Math.round(flyMass.q*100)+'/'+flyMass.strag;
   fp.needsUpdate=true;
   if(_glimMat.opacity>0){
    for(let j=0;j<7;j++){const i=15+j,gm=flyRef[j];
@@ -1670,8 +1672,10 @@ function updFx(dt){
   window._pawDbg=P.st;}
  /* koi drift - gather for the player, but learn Sora's shadow along the rim */
  const pdx=player.x-POND.x,pdz=player.z-POND.z;
+ if(Q.get('hotaru')==='shot'){player.x=15;player.z=5;player.dir=Math.PI;}
  if(Q.get('basin')==='shot'){player.x=-6.4;player.z=3.3;player.dir=-Math.PI/2;}
- if(Q.get('basin')==='shot'){player.x=-6.4;player.z=3.3;player.dir=-Math.PI/2;}
+ if(Q.get('hotaru')==='shot'){player.x=15;player.z=5;player.dir=Math.PI;}
+if(Q.get('basin')==='shot'){player.x=-6.4;player.z=3.3;player.dir=-Math.PI/2;}
 if(Q.get('well')==='shot'){player.x=-5;player.z=3;player.dir=-Math.PI/2;}
 if(Q.get('jizo')==='shot'){player.x=15;player.z=-1;player.dir=Math.PI/2;}
 if(Q.get('postbox')==='shot'){player.x=5.7;player.z=-5;player.dir=Math.PI;}
