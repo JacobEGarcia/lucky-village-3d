@@ -457,7 +457,7 @@ function updWindowCat(dt){const dusk=phase()==='dusk';if(dusk&&windowS.day!==day
  else windowCat.visible=false;window._windowDbg=(windowS.on?'cross/'+windowS.k.toFixed(2):(windowS.shown?'gone':(windowS.eligible?'waiting':'rare-off')))+'/'+windowS.day;}
 
 /* village laundry line: four quiet cloths, each with its own wind weight */
-const laundry=[];
+const laundry=[];const laundryWind={snap:0,prev:0,count:0};
 (function(){const ax=-7,az=-13,bx=4,bz=-13.8,wood=mat(0x493626,.95);
  for(const[x,z]of[[ax,az],[bx,bz]]){const post=new THREE.Mesh(new THREE.CylinderGeometry(.07,.1,3.5,7),wood);post.position.set(x,1.75,z);post.castShadow=true;scene.add(post);}
  const lineY=3.28,line=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ax,lineY,az),new THREE.Vector3(bx,lineY,bz)]);scene.add(new THREE.Line(line,new THREE.LineBasicMaterial({color:0x39302a})));
@@ -1646,8 +1646,9 @@ function updFx(dt){
    if(t<groveKick[gi])continue;
    const[gx,gz]=GROVE[gi];
    if(Math.hypot(player.x-gx,player.z-gz)<2.3){groveKick[gi]=t+1.4;kickTree(gi);break;}}}
- for(const l of laundry){const u=l.userData,w=windNow(),q=clamp((w-.35)*u.w,0,1.35);l.rotation.x=Math.sin(t*(.72+.12*u.w)+u.ph)*.12*q;l.rotation.z=Math.cos(t*(.55+.09*u.w)+u.ph)*.035*q;u.cloth.rotation.x=Math.sin(t*(1.1+.2*u.w)+u.ph)*.08*q;}
- window._laundryDbg=laundry.map(l=>l.rotation.x.toFixed(2)).join(',');
+ const lw=windNow(),forced=Q.get('laundrysnap')==='shot';if((lw>1.12&&laundryWind.prev<=1.12)||forced&&laundryWind.snap<.05){laundryWind.snap=1;laundryWind.count++;}laundryWind.prev=lw;laundryWind.snap=Math.max(0,laundryWind.snap-dt*(forced?.08:.38));
+ for(const l of laundry){const u=l.userData,q=clamp((lw-.35)*u.w,0,1.35),sn=laundryWind.snap,flutter=1-sn*.88;l.rotation.x=Math.sin(t*(.72+.12*u.w)+u.ph)*.12*q*flutter-.24*sn;l.rotation.z=Math.cos(t*(.55+.09*u.w)+u.ph)*.035*q*flutter;u.cloth.rotation.x=Math.sin(t*(1.1+.2*u.w)+u.ph)*.08*q*flutter-.13*sn;u.cloth.scale.y=1+.035*sn;}
+ window._laundryDbg=(laundryWind.snap>.05?'taut':'soft')+'/'+laundryWind.snap.toFixed(2)+'/'+laundryWind.count;
  for(const f of furin){const fw=.6+.4*windNow();f.rotation.x=Math.sin(t*.83+f.userData.ph)*.06*fw;f.rotation.z=Math.cos(t*.61+f.userData.ph)*.07*fw;}
  if(state==='play'){chimeT-=dt;if(chimeT<0){tone(2093,.7,'sine',.018);setTimeout(()=>tone(2637,.5,'sine',.014),180);chimeT=R(16,36);}}
  /* water-lap: standing on the stepping stones, the stream answers */
@@ -1774,6 +1775,7 @@ if(Q.get('jizo')==='shot'){player.x=15;player.z=-1;player.dir=Math.PI/2;}
 if(Q.get('postbox')==='shot'){player.x=5.7;player.z=-5;player.dir=Math.PI;}
 if(Q.get('pondleaf')==='shot'){player.x=7;player.z=3;player.dir=-Math.PI/2;}
 if(Q.get('plazaleaves')==='shot'){player.x=3.7;player.z=-8.8;player.dir=Math.PI;}
+if(Q.get('laundrysnap')==='shot'){player.x=-1.5;player.z=-8.5;player.dir=Math.PI;}
 if(Q.get('capcat')==='shot'){player.x=-3.6;player.z=-3;player.dir=Math.PI;}
 if(Q.get('frost')==='shot'){player.x=0;player.z=8;player.dir=Math.PI;}
 if(Q.get('windowcat')==='shot'){player.x=9;player.z=-10;player.dir=Math.PI;}
