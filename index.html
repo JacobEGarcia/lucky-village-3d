@@ -703,7 +703,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mo||0).toFixed(2)+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mo||0).toFixed(2)+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1447,15 +1447,25 @@ function updFx(dt){
   if(pw){pw.position.z=.3+.32*kk;pw.position.y=.08-.05*kk;}
   player.g.rotation.x=.14*kk;
   window._pawDbg=P.st;}
- /* koi drift - and gather at the rim when the player stands at the water's edge */
+ /* koi drift - gather for the player, but learn Sora's shadow along the rim */
  const pdx=player.x-POND.x,pdz=player.z-POND.z;
+ const sk=window._soraKoi=window._soraKoi||{q:0,near:null,stop:0,mouth:0,lastx:sora.x,lastz:sora.z};
+ const sdist=Math.hypot(sora.x-POND.x,sora.z-POND.z),sstep=Q.get('koisora')==='trail'?.2:Math.hypot(sora.x-sk.lastx,sora.z-sk.lastz);sk.lastx=sora.x;sk.lastz=sora.z;
+ if(Q.get('koisora')==='mouth'){sk.stop=3;sk.mouth=1;}
+ const sRim=sdist>POND.r+.25&&sdist<POND.r+2.3&&state==='play',sMove=sstep>dt*.35;
+ sk.q+=((sRim?1:0)-sk.q)*Math.min(1,dt*(sRim?2:3));if(!sRim){sk.q=Math.max(0,sk.q-dt*2.5);sk.stop=0;sk.mouth=0;sk.near=null;}
+ else if(sMove){sk.stop=0;sk.mouth=0;}else{sk.stop+=dt;if(sk.stop>1.1)sk.mouth=Math.min(1,sk.mouth+dt*1.7);}
+ const sa=Math.atan2(sora.x-POND.x,sora.z-POND.z),snx=POND.x+Math.sin(sa)*POND.r*.74,snz=POND.z+Math.cos(sa)*POND.r*.74;
+ if(sRim){sora.dir=Math.atan2(POND.x-sora.x,POND.z-sora.z);if(sk.mouth>.02){sora.g.rotation.y=sora.dir;sora.g.rotation.x=.15*sk.mouth;sora.g.userData.head.rotation.x=.25*sk.mouth;}}
+ else if(sora.g.rotation.x!==0)sora.g.rotation.x*=Math.max(0,1-dt*5);
+ window._soraKoiDbg=(sRim?(sMove?'trail':(sk.mouth>.1?'mouth':'wait')):'off')+'/'+sk.q.toFixed(1);
  const nearPond=state==='play'&&Math.hypot(pdx,pdz)<POND.r+2.5;
  const pa=Math.atan2(pdx,pdz);
  /* soft shapes: most visible at dawn on calm low water, faint at midday, hidden by rain chop */
  const koiVis=(.14+.38*clamp(1-Math.abs(p-.07)/.09,0,1))*(raining()?.45:1);
  window._koiTurns=window._koiTurns||0;
  const scatF=clamp(window._koiScat||0,0,1);if(window._koiScat>0)window._koiScat-=dt;
- for(const k of _koi){k.userData.ph+=dt*(.5+.8*k.userData.tw+2.4*scatF);
+ for(let ki=0;ki<_koi.length;ki++){const k=_koi[ki];k.userData.ph+=dt*(.5+.8*k.userData.tw+2.4*scatF);
   const rrf=1-.45*scatF;
   const ox=POND.x+Math.sin(k.userData.ph)*POND.r*.5*rrf;
   const oz=POND.z+Math.cos(k.userData.ph*.8)*POND.r*.45*rrf;
@@ -1466,6 +1476,10 @@ function updFx(dt){
    const gz=POND.z+Math.cos(pa)*POND.r*.72+Math.cos(k.userData.ph*3)*.5;
    k.position.x=lerp(ox,gx,gv);k.position.z=lerp(oz,gz,gv);
   }else{k.position.x=ox;k.position.z=oz;}
+  if(sk.q>.01&&ki<2){const lag=(ki+.4)*.42,tx=snx-Math.sin(sa)*lag+Math.cos(sa)*ki*.32,tz=snz-Math.cos(sa)*lag-Math.sin(sa)*ki*.32,follow=sk.q*(ki? .68:1);
+   k.position.x=lerp(k.position.x,tx,follow);k.position.z=lerp(k.position.z,tz,follow);k.position.y=.04+sk.mouth*.045*(ki===0);k.scale.y=.3+sk.mouth*.18*(ki===0);
+   if(ki===0&&sk.mouth>.75&&Math.sin(t*7)>0.92)ripple(k.position.x,k.position.z);
+  }else{k.position.y=.04;k.scale.y=.3;}
   k.userData.turn-=dt*(Q.has('koit')?6:1);
   if(k.userData.turn<0){k.userData.turn=R(4,9);k.userData.tw=1;window._koiTurns++;ripple(k.position.x,k.position.z);}
   if(k.userData.tw>0)k.userData.tw=Math.max(0,k.userData.tw-dt/1.2);
@@ -1605,6 +1619,7 @@ requestAnimationFrame(frame);
 /* ---------- init hooks ---------- */
 if(Q.has('play')||AUTO){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');}
 if(Q.get('gaze')==='bridge'){sora.x=BRG.x;sora.z=BRG.z;sora.st='gaze';sora.dir=-1.57;sora.gazePh='dusk';sora.wp=null;sora.bolt=false;sora.duskGaze=false;}
+if(Q.has('koisora')){sora.x=14;sora.z=3.25;sora.st='sit';sora.timer=30;sora.wp=null;sora.napDay=day;sora.lastPh=phase();window._soraKoi={q:1,near:null,stop:Q.get('koisora')==='mouth'?3:0,mouth:Q.get('koisora')==='mouth'?1:0,lastx:sora.x,lastz:sora.z};}
 if(Q.has('flymass')){sora.x=17.2;sora.z=-8;sora.st='sit';sora.timer=30;sora.wp=null;sora.napDay=day;flyMass.q=1;}
 if(Q.has('dragon')){sora.x=16.4;sora.z=-8.8;sora.st=Q.get('dragon')==='shot'?'dragonPounce':'sit';sora.timer=30;sora.wp=null;sora.napDay=day;dragonS.a=0;if(Q.get('dragon')==='shot'){sora.pounceK=.5;sora.dragonWatch=true;sora.dragonResume={st:'sit',timer:30};dragonS.pounced=true;dragonS.lift=1.5;}}
 if(Q.has('puddles')){wakePuddles();const q=puddles[0];sora.x=q.position.x;sora.z=q.position.z+.48;sora.st='puddle';sora.puddle=q;sora.puddleT=Q.get('puddles')==='sniff'?3.25:2;sora.rainResume='roam';sora.napDay=day;sora.wp=null;sora.bolt=false;}
