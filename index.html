@@ -297,6 +297,21 @@ let waterMat;
   m.scale.set(sx,sz,1);m.userData={a:a,rr:rr,base:a,dr:(i%2?1:-1)*R(.008,.018),bob:R(0,6.28),sx:sx,sz:sz,flow:R(.025,.055)};
   scene.add(m);_mists.push(m);}
 })();
+/* dawn heron: one-legged and still in the pond shallows, gone by full day */
+const heron=new THREE.Group();
+{const feather=mat(0xc8ccc5,.96),shade=mat(0x727b7b,.94),beak=mat(0xd4a547,.86),leg=mat(0x6c6657,.92);
+ const body=new THREE.Mesh(new THREE.SphereGeometry(.42,12,9),feather);body.scale.set(.68,1.35,.68);body.position.y=1.32;body.castShadow=true;heron.add(body);
+ const wing=new THREE.Mesh(new THREE.SphereGeometry(.34,10,8),shade);wing.scale.set(.22,1.18,.72);wing.position.set(.26,1.38,.02);wing.rotation.z=-.2;heron.add(wing);
+ const neck=new THREE.Mesh(new THREE.CylinderGeometry(.085,.12,.8,8),feather);neck.position.set(.04,1.94,.03);neck.rotation.z=-.13;heron.add(neck);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),feather);head.position.set(.1,2.36,.04);heron.add(head);
+ const eye=new THREE.Mesh(new THREE.SphereGeometry(.025,6,5),mat(0x151719,.8));eye.position.set(.09,2.41,.205);heron.add(eye);
+ const bill=new THREE.Mesh(new THREE.ConeGeometry(.055,.58,6),beak);bill.rotation.z=-Math.PI/2;bill.position.set(.4,2.34,.04);heron.add(bill);
+ const stand=new THREE.Mesh(new THREE.CylinderGeometry(.025,.035,1.05,6),leg);stand.position.set(-.08,.56,0);heron.add(stand);
+ const bent1=new THREE.Mesh(new THREE.CylinderGeometry(.022,.028,.46,6),leg);bent1.position.set(.12,.86,.03);bent1.rotation.z=.85;heron.add(bent1);
+ const bent2=new THREE.Mesh(new THREE.CylinderGeometry(.02,.024,.4,6),leg);bent2.position.set(.26,1.12,.03);bent2.rotation.z=-.7;heron.add(bent2);
+ const foot=new THREE.Mesh(new THREE.BoxGeometry(.32,.025,.035),leg);foot.position.set(.05,.06,.04);heron.add(foot);
+ heron.position.set(POND.x-3.65,.05,POND.z-3.25);heron.rotation.y=-.45;scene.add(heron);}
+function updHeron(){const dawn=p<.145&&!raining(),fade=Q.get('heron')==='shot'?1:(dawn?clamp((.145-p)/.035,0,1):0);heron.visible=fade>.01;heron.traverse(o=>{if(o.material){o.material.transparent=true;o.material.opacity=fade;}});heron.rotation.z=Math.sin(t*.17)*.006;window._heronDbg=(raining()?'rain-off':fade>.01?'shallows/'+fade.toFixed(2):'gone');}
 /* ---------- stream + taiko-bashi ---------- */
 const BRG={x:23.3,z:-5.6,rot:.35,R:2.6,HA:.8,C:-2.6*Math.cos(.8)+.12};
 const BRG_D={x:Math.sin(.35),z:Math.cos(.35)},BRG_X={x:Math.cos(.35),z:-Math.sin(.35)};
@@ -892,7 +907,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' pondleaf='+(window._pondLeafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+' window='+(window._windowDbg||'x')+' frost='+(window._frostDbg||'x')+' capcat='+(window._sleepCapDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' kite='+(window._kiteDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' jizo='+(window._jizoDbg||'x')+' well='+(window._wellDbg||'x')+' chozu='+(window._chozuDbg||'x')+' post='+(window._postDbg||'x')+' wash='+(window._laundryDbg||'x')+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' pondleaf='+(window._pondLeafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+' window='+(window._windowDbg||'x')+' frost='+(window._frostDbg||'x')+' capcat='+(window._sleepCapDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' kite='+(window._kiteDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' jizo='+(window._jizoDbg||'x')+' well='+(window._wellDbg||'x')+' chozu='+(window._chozuDbg||'x')+' post='+(window._postDbg||'x')+' wash='+(window._laundryDbg||'x')+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' heron='+(window._heronDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1672,10 +1687,12 @@ function updFx(dt){
   window._pawDbg=P.st;}
  /* koi drift - gather for the player, but learn Sora's shadow along the rim */
  const pdx=player.x-POND.x,pdz=player.z-POND.z;
+ if(Q.get('heron')==='shot'){player.x=9;player.z=2.6;player.dir=-Math.PI/2;}
  if(Q.get('mist')==='shot'){player.x=8.5;player.z=3;player.dir=-Math.PI/2;}
  if(Q.get('hotaru')==='shot'){player.x=15;player.z=5;player.dir=Math.PI;}
  if(Q.get('basin')==='shot'){player.x=-6.4;player.z=3.3;player.dir=-Math.PI/2;}
- if(Q.get('mist')==='shot'){player.x=8.5;player.z=3;player.dir=-Math.PI/2;}
+ if(Q.get('heron')==='shot'){player.x=9;player.z=2.6;player.dir=-Math.PI/2;}
+if(Q.get('mist')==='shot'){player.x=8.5;player.z=3;player.dir=-Math.PI/2;}
 if(Q.get('hotaru')==='shot'){player.x=15;player.z=5;player.dir=Math.PI;}
 if(Q.get('basin')==='shot'){player.x=-6.4;player.z=3.3;player.dir=-Math.PI/2;}
 if(Q.get('well')==='shot'){player.x=-5;player.z=3;player.dir=-Math.PI/2;}
@@ -1857,7 +1874,7 @@ function frame(now){
  updDay();
  if(state!=='menu'){updPlayer(dt);updNeighbor(mugi,MUGIWPS,dt);updNeighbor(sora,SORAWPS,dt);updFish(dt);updAct();}
  ghostFollow();
- updDragon(dt);updGingko(dt);updSparrows(dt);updTrain(dt);updWindowCat(dt);updLanternSleeper();updPostbox(dt);updJizoSeason();updWell();updChozu();updFx(dt);updPuddles(dt);updRain(dt);updHig(dt);updBird(dt);updNoren(dt);updMeteor(dt);updCam(dt);drawFloats();
+ updDragon(dt);updGingko(dt);updSparrows(dt);updTrain(dt);updWindowCat(dt);updLanternSleeper();updPostbox(dt);updJizoSeason();updWell();updChozu();updHeron();updFx(dt);updPuddles(dt);updRain(dt);updHig(dt);updBird(dt);updNoren(dt);updMeteor(dt);updCam(dt);drawFloats();
  renderer.render(scene,cam);
 }
 requestAnimationFrame(frame);
