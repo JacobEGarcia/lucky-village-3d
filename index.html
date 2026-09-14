@@ -193,7 +193,7 @@ sun.shadow.camera.far=160;sun.shadow.bias=-.0004;scene.add(sun);scene.add(sun.ta
 const amb=new THREE.AmbientLight(0x8090b0,.0);scene.add(amb);
 /* ---------- palette / phase ---------- */
 const DAY_LEN=240;
-let state='menu',t=0,p=.3,day=1,koban=0;
+let state='menu',t=0,p=.3,day=1,koban=0,wishDay=0;
 const phase=()=>p<.15?'dawn':p<.5?'day':p<.65?'dusk':'night';
 /* weather: some days dawn rainy - rain lasts from the day roll into the morning */
 const RAIN_END=.28;
@@ -825,7 +825,7 @@ function updPondLanternShimmers(){const qa=Q.get('pondshimmer')==='shot',thaw=wi
 function updLanternRoofSnow(){const winter=Q.has('winter')||((day-1)%24)>=18,qa=Q.get('lanternsnow'),fall=window._nextSnowQ||0,early=qa==='first'?.24:clamp(fall/.34,0,1),ground=(nextSnowSettled||[]).filter(m=>m.visible).length,q=qa==='shot'?1:early,w=windNow(),ang=-.38;let pieces=0;for(let li=0;li<lanterns.length;li++){const d=lanterns[li].userData.snowDrift;d.rotation.y=ang+Math.sin(t*.08+li)*.03;for(let i=0;i<d.children.length;i++){const m=d.children[i];m.visible=q>.02;m.material.opacity=q*(.95-i*.14);m.scale.y=(.38+(w-.6)*.18)*(1-i*.14);if(m.visible)pieces++;}}window._lanternSnowDbg=(q>.02?(ground?'settled':'first-caps'):'bare')+'/'+q.toFixed(2)+'/'+lanterns.length+'/'+pieces+'/'+ground;}
 /* diamond dust: clear-night ice crystals reveal themselves only inside each lantern's warm cone */
 const lanternGlints=[];(function(){for(let li=0;li<lanterns.length;li++){const L=lanterns[li];for(let i=0;i<14;i++){const inner=i<8,r=inner?R(.12,.52):R(.5,1.05),a=R(0,6.28),m=new THREE.Mesh(new THREE.OctahedronGeometry(inner?.035:.025,0),new THREE.MeshBasicMaterial({color:0xffe3a1,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));m.userData={li:li,i:i,r:r,a:a,ph:R(0,1),sp:R(.52,.86),inner:inner};m.visible=false;scene.add(m);lanternGlints.push(m);}}})();
-function updLanternSnowGlints(){const winter=Q.has('winter')||((day-1)%24)>=18,qa=Q.get('snowglints')==='shot',on=qa||(winter&&phase()==='night'&&!raining()&&p>.78&&p<.94),w=windNow();let seen=0,inner=0;for(const m of lanternGlints){const u=m.userData,L=lanterns[u.li],k=(t*u.sp+u.ph)%1,flash=Math.pow(Math.max(0,Math.sin(k*Math.PI*4.2+u.i*1.37)),8),glow=Math.pow(Math.max(0,Math.sin(k*Math.PI+u.i*.71)),2),tw=Math.max(flash,glow*.16),x=L.position.x+Math.cos(u.a+k*.35)*u.r-k*.11*w,z=L.position.z+Math.sin(u.a+k*.28)*u.r,y=.18+(1-k)*1.72;m.position.set(x,y,z);m.rotation.set(t*(1.7+u.sp),t*2.3+u.i,k*5.1);m.scale.setScalar((u.inner?.72:.48)*(1+1.15*flash));m.visible=on&&tw>.025;m.material.opacity=(u.inner?.74:.38)*tw*(.42+.58*(1-k));if(m.visible){seen++;if(u.inner)inner++;}}window._snowGlintDbg=(on?'diamond-clear':'off')+'/'+seen+'/'+inner+'/'+lanternGlints.length+'/'+(raining()?'wet':'dry');}
+function updLanternSnowGlints(){const winter=Q.has('winter')||((day-1)%24)>=18,qa=Q.get('snowglints')==='shot',wishQA=Q.get('wishdawn'),wish=(wishQA||wishDay===day)&&phase()==='dawn'&&!raining()&&p<.14,on=qa||wish||(winter&&phase()==='night'&&!raining()&&p>.78&&p<.94),w=windNow();let seen=0,inner=0;for(const m of lanternGlints){const u=m.userData,L=lanterns[u.li],k=(t*u.sp+u.ph)%1,flash=Math.pow(Math.max(0,Math.sin(k*Math.PI*4.2+u.i*1.37)),8),glow=Math.pow(Math.max(0,Math.sin(k*Math.PI+u.i*.71)),2),tw=Math.max(flash,glow*.16),x=L.position.x+Math.cos(u.a+k*.35)*u.r-k*.11*w,z=L.position.z+Math.sin(u.a+k*.28)*u.r,y=.18+(1-k)*1.72;m.position.set(x,y,z);m.rotation.set(t*(1.7+u.sp),t*2.3+u.i,k*5.1);m.scale.setScalar((u.inner?.72:.48)*(1+1.15*flash));m.visible=on&&tw>.025;m.material.opacity=(u.inner?.74:.38)*tw*(.42+.58*(1-k));if(m.visible){seen++;if(u.inner)inner++;}}window._snowGlintDbg=(wish?'wish-dawn':on?'diamond-clear':'off')+'/'+seen+'/'+inner+'/'+lanternGlints.length+'/'+(raining()?'wet':'dry')+'/wish'+wishDay;}
 /* bridge-side Jizo and the village's changing seasonal offerings */
 const jizo=new THREE.Group(),jizoOffer={spring:[],autumn:[],winter:[]};
 {const stone=mat(0x878584,.96),red=mat(0xb23a32,.9),leaf=mat(0x506445,.95),orange=mat(0xd17835,.86);
@@ -1732,11 +1732,11 @@ canvas.addEventListener('pointermove',e=>{ptr.set(e.clientX/innerWidth*2-1,-(e.c
 /* rebuild placed items after load */
 function rebuildPlaced(){for(const d of placed)DECOR[d.k].make(d.x,d.z);}
 /* ---------- save ---------- */
-function save(){try{localStorage.setItem('luckyvillage3d-v1',JSON.stringify({koban,day,dex,placed,basket}));}catch(e){}}
+function save(){try{localStorage.setItem('luckyvillage3d-v1',JSON.stringify({koban,day,dex,placed,basket,wishDay}));}catch(e){}}
 function load(){try{const s=JSON.parse(localStorage.getItem('luckyvillage3d-v1'));
- if(s){koban=s.koban|0;day=s.day|0||1;dex=s.dex||{};placed=s.placed||[];basket=s.basket||{n:0,v:0};}}catch(e){}}
+ if(s){koban=s.koban|0;day=s.day|0||1;dex=s.dex||{};placed=s.placed||[];basket=s.basket||{n:0,v:0};wishDay=s.wishDay|0;}}catch(e){}}
 load();
-if(Q.has('fresh')){koban=0;day=1;dex={};placed=[];basket={n:0,v:0};}
+if(Q.has('fresh')){koban=0;day=1;dex={};placed=[];basket={n:0,v:0};wishDay=0;}
 if(Q.has('rich')){koban=5000;placed=[{k:'lantern',x:-2.4,z:6},{k:'daruma',x:1.5,z:-8},{k:'sakura',x:-5,z:-4},{k:'statue',x:3,z:14}];}
 rebuildPlaced();
 /* ---------- day cycle ---------- */
@@ -2244,9 +2244,9 @@ const met={on:false,t0:0,next:METFAST?0:R(75,180),sx:0,sy:0,sz:0,dx:0,dy:0,dz:0,
 function updMeteor(dt){
  const clearSky=!raining()&&(phase()==='night'||!!mugi.firstStarLook);
  if(clearSky){
-  if(METPIN&&!met.on){met.on=true;met.t0=t-.375;mets++;met.luck=!!(mugi.firstStarLook&&mugi.firstStarLook.join);met.tailM=mugi.g.userData.tail.rotation.z;met.tailP=player.g.userData.tail.rotation.z;
+  if(METPIN&&!met.on){met.on=true;met.t0=t-.375;mets++;met.luck=!!(mugi.firstStarLook&&mugi.firstStarLook.join);met.tailM=mugi.g.userData.tail.rotation.z;met.tailP=player.g.userData.tail.rotation.z;if(met.luck){wishDay=day+1;save();window._sharedLuckDbg='wish-set/'+wishDay;}
    met.sx=-14;met.sy=3.8;met.sz=-27;met.dx=15;met.dy=-2;met.dz=1;}
-  if(!met.on&&t>met.next){met.on=true;met.t0=t;mets++;met.luck=!!(mugi.firstStarLook&&mugi.firstStarLook.join);met.tailM=mugi.g.userData.tail.rotation.z;met.tailP=player.g.userData.tail.rotation.z;
+  if(!met.on&&t>met.next){met.on=true;met.t0=t;mets++;met.luck=!!(mugi.firstStarLook&&mugi.firstStarLook.join);met.tailM=mugi.g.userData.tail.rotation.z;met.tailP=player.g.userData.tail.rotation.z;if(met.luck){wishDay=day+1;save();window._sharedLuckDbg='wish-set/'+wishDay;}
    met.sx=R(-24,16);met.sy=R(3,4.6);met.sz=R(-30,-22);
    const a=R(-.6,.6);met.dx=R(12,20)*Math.cos(a);met.dy=-R(1.5,3);met.dz=R(2,5)*Math.sin(a);}
   if(met.on){const k=METPIN?.5:(t-met.t0)/.75;
@@ -2276,6 +2276,7 @@ function frame(now){
 requestAnimationFrame(frame);
 /* ---------- init hooks ---------- */
 if(Q.has('play')||AUTO){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');}
+if(Q.get('wishdawn')){p=.06;wishDay=day;player.x=-.4;player.z=-6.9;player.dir=Math.PI;}
 if(Q.get('gaze')==='bridge'){sora.x=BRG.x;sora.z=BRG.z;sora.st='gaze';sora.dir=-1.57;sora.gazePh='dusk';sora.wp=null;sora.bolt=false;sora.duskGaze=false;}
 if(Q.get('well')==='shot'){player.x=-5;player.z=3;player.dir=-Math.PI/2;}
 if(Q.get('jizo')==='shot'){player.x=15;player.z=-1;player.dir=Math.PI/2;}
