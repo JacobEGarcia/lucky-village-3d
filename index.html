@@ -892,9 +892,10 @@ const lanternSleeper=new THREE.Group(),sleepBody=new THREE.Group();
  const head=new THREE.Mesh(new THREE.SphereGeometry(.25,12,9),patch);head.position.set(.42,.24,.03);sleepBody.add(head);
  for(const z of[-.13,.13]){const ear=new THREE.Mesh(new THREE.ConeGeometry(.1,.2,6),patch);ear.position.set(.46,.43,z);ear.rotation.z=-.18;sleepBody.add(ear);}
  const tail=new THREE.Mesh(new THREE.TorusGeometry(.38,.075,8,16,4.8),patch);tail.rotation.x=Math.PI/2;tail.position.set(-.08,.16,.02);sleepBody.add(tail);
+ const snowPillow=new THREE.Group(),snow=mat(0xdbe5e2,.98);for(const[x,y,z,sc]of[[-.04,.28,.15,.3],[-.22,.26,.08,.24],[.14,.27,.06,.22],[.03,.33,-.02,.19]]){const q=new THREE.Mesh(new THREE.DodecahedronGeometry(sc,1),snow);q.scale.set(1.4,.55,1);q.position.set(x,y,z);snowPillow.add(q);}snowPillow.position.set(-.1,.03,.02);sleepBody.add(snowPillow);lanternSleeper.userData.snow=snowPillow;
  lanternSleeper.add(sleepBody);lanternSleeper.position.set(-3.6,1.92,-9.4);lanternSleeper.rotation.y=.35;lanternSleeper.visible=false;scene.add(lanternSleeper);}
-function updLanternSleeper(){const winter=Q.has('winter')||((day-1)%24)>=18,on=winter&&p<.145&&!raining();lanternSleeper.visible=on;
- const breath=.985+.018*Math.sin(t*1.65);sleepBody.scale.set(1,breath,1);sleepBody.position.y=(breath-1)*.14;window._sleepCapDbg=(on?'sleep':'gone')+'/'+breath.toFixed(3);}
+function updLanternSleeper(){const winter=Q.has('winter')||((day-1)%24)>=18,on=winter&&p<.145&&!raining(),cold=Q.get('snowpillow')==='shot'||(winter&&p<.105&&!raining());lanternSleeper.visible=on||Q.get('snowpillow')==='shot';lanternSleeper.userData.snow.visible=cold;
+ const breath=.985+.018*Math.sin(t*1.65);sleepBody.scale.set(1,breath,1);sleepBody.position.y=(breath-1)*.14;window._sleepCapDbg=((on||Q.get('snowpillow')==='shot')?'sleep':'gone')+'/'+breath.toFixed(3)+'/'+(cold?'snow':'bare');}
 const player={g:makeCat(0xf4ead0,0xc73e2e),x:0,z:8,dir:Math.PI,hop:0,moving:false,joy:0};
 scene.add(player.g);
 /* obstacles for simple collision */
@@ -1797,6 +1798,7 @@ if(Q.get('sorabreath')==='shot'){player.x=21.7;player.z=-6.2;player.dir=Math.PI;
 if(Q.get('bridgefrost')==='shot'){player.x=20.6;player.z=-3.5;player.dir=2.0;}
 if(Q.get('riverice')==='shot'){player.x=20.6;player.z=-3.5;player.dir=2.0;}
 if(Q.get('icereflect')==='shot'){player.x=20.6;player.z=-3.5;player.dir=2.0;}
+if(Q.get('snowpillow')==='shot'){player.x=-3.0;player.z=-7.6;player.dir=Math.PI;}
 if(Q.get('capcat')==='shot'){player.x=-3.6;player.z=-3;player.dir=Math.PI;}
 if(Q.get('frost')==='shot'){player.x=0;player.z=8;player.dir=Math.PI;}
 if(Q.get('windowcat')==='shot'){player.x=9;player.z=-10;player.dir=Math.PI;}
