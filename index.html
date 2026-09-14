@@ -397,7 +397,13 @@ function makeStall(x,z){
   awn.position.set(-1.65+i*.66,2.62,0);awn.rotation.x=-.12;awn.castShadow=true;g.add(awn);}
  /* hanging lantern */
  const lm=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),mat(0xf4c96a,.5));lm.scale.y=1.25;lm.position.set(1.5,2.1,.8);g.add(lm);
- const lite=new THREE.PointLight(0xffb050,0,6,2);lite.position.copy(lm.position);g.add(lite);
+ /* chochin ribs + top/bottom caps + hanging cord */
+ for(const ry of[-.12,0,.12]){const rib=new THREE.Mesh(new THREE.TorusGeometry(.2*Math.cos(ry/.28*1.2),.012,6,18),mat(0xc73e2e,.6));
+  rib.rotation.x=Math.PI/2;rib.position.set(1.5,2.1+ry,.8);g.add(rib);}
+ const capT=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,.05,8),mat(0x2a2118,.8));capT.position.set(1.5,2.39,.8);g.add(capT);
+ const capB=new THREE.Mesh(new THREE.CylinderGeometry(.09,.07,.05,8),mat(0x2a2118,.8));capB.position.set(1.5,1.81,.8);g.add(capB);
+ const cord=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,.24,6),mat(0x2a2118,.8));cord.position.set(1.5,2.52,.8);g.add(cord);
+ const lite=new THREE.PointLight(0xffb050,0,7,2);lite.position.set(1.5,2.05,1.1);g.add(lite);
  /* goods on the counter: daruma row, koban stacks */
  for(let i=0;i<3;i++){
   const d=new THREE.Mesh(new THREE.SphereGeometry(.09,8,7),mat(0xc73e2e,.7));
@@ -1066,7 +1072,9 @@ function updDay(){
   l.userData.pane.material.color.setHex(dk>.3?0xf4c96a:0x3a3a42);}
  for(const h of[house1,house2]){h.userData.lite.intensity=dk*2.4;
   h.userData.win.material.color.setHex(dk>.3?0xf4c96a:0x7a8a96);}
- stall.userData.lite.intensity=dk*2.6;
+ stall.userData.lite.intensity=dk*3;
+ stall.userData.lamp.material.emissive.setHex(0xffa848);
+ stall.userData.lamp.material.emissiveIntensity=dk*1.05;
  for(const l of statueLites)l.intensity=dk*2;
  if(raining()){scene.background.lerp(RAINC,.5);scene.fog.color.copy(scene.background);
   sun.intensity*=.45;hemi.intensity*=.7;petals.material.opacity*=.25;}
