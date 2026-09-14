@@ -258,6 +258,11 @@ let waterMat;
  window._koi=[];
  for(let i=0;i<4;i++){const k=new THREE.Mesh(new THREE.SphereGeometry(.4,8,6),new THREE.MeshBasicMaterial({color:0x12202e,transparent:true,opacity:.5}));
   k.scale.set(1.6,.3,.7);k.position.set(POND.x,.04,POND.z);k.userData={ph:i*1.9,turn:R(2,7),tw:0};scene.add(k);_koi.push(k);}
+ /* autumn gingko pond rider: one leaf shaped by the same fan silhouette */
+ const pgsh=new THREE.Shape();pgsh.moveTo(0,-.18);pgsh.quadraticCurveTo(-.48,.28,0,.52);pgsh.quadraticCurveTo(.48,.28,0,-.18);
+ const pondGingko=new THREE.Mesh(new THREE.ShapeGeometry(pgsh),new THREE.MeshBasicMaterial({color:0xd9b447,side:THREE.DoubleSide}));
+ pondGingko.rotation.x=-Math.PI/2;pondGingko.scale.setScalar(1.45);pondGingko.position.set(POND.x,.105,POND.z);pondGingko.visible=false;scene.add(pondGingko);window._pondGingko=pondGingko;
+ window._pondGingkoS={a:0,r:3.2,spin:0,nudge:0,next:R(18,44),shownDay:0};
  /* the maple leaf: spirals down every few minutes, rings once, drifts, sometimes carries a firefly */
  const leafSh=new THREE.Shape();
  for(let i=0;i<10;i++){const a=i/10*Math.PI*2-Math.PI/2,rr=i%2?.13:.3;
@@ -824,7 +829,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+' window='+(window._windowDbg||'x')+' frost='+(window._frostDbg||'x')+' capcat='+(window._sleepCapDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' kite='+(window._kiteDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' wash='+(window._laundryDbg||'x')+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' pondleaf='+(window._pondLeafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+' window='+(window._windowDbg||'x')+' frost='+(window._frostDbg||'x')+' capcat='+(window._sleepCapDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' kite='+(window._kiteDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' wash='+(window._laundryDbg||'x')+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1603,7 +1608,8 @@ function updFx(dt){
   window._pawDbg=P.st;}
  /* koi drift - gather for the player, but learn Sora's shadow along the rim */
  const pdx=player.x-POND.x,pdz=player.z-POND.z;
- if(Q.get('capcat')==='shot'){player.x=-3.6;player.z=-3;player.dir=Math.PI;}
+ if(Q.get('pondleaf')==='shot'){player.x=7;player.z=3;player.dir=-Math.PI/2;}
+if(Q.get('capcat')==='shot'){player.x=-3.6;player.z=-3;player.dir=Math.PI;}
 if(Q.get('frost')==='shot'){player.x=0;player.z=8;player.dir=Math.PI;}
 if(Q.get('windowcat')==='shot'){player.x=9;player.z=-10;player.dir=Math.PI;}
 if(Q.get('laundry')==='shot'){player.x=-1;player.z=-5;player.dir=Math.PI;}
@@ -1645,6 +1651,13 @@ if(Q.get('koiplip')==='shot'){sora.x=14;sora.z=3.3;sora.st='sit';sora.wp=null;}
   if(k.userData.tw>0)k.userData.tw=Math.max(0,k.userData.tw-dt/1.2);
   k.rotation.y=-k.userData.ph+Math.sin(k.userData.tw*Math.PI)*.9;
   k.material.opacity=koiVis;}
+ /* windy autumn afternoon: one gingko leaf rides the pond and a koi occasionally noses it */
+ {const gm=window._pondGingko,gs=window._pondGingkoS,autumn=Q.has('autumn')||((day-1)%24>=12&&(day-1)%24<18),on=autumn&&phase()==='day'&&(windNow()>.82||Q.get('pondleaf')==='shot')&&!raining();
+  gm.visible=on;if(on){const w=windNow();gs.a+=dt*(.025+.035*w);gs.spin+=dt*(.35+.28*w+gs.nudge*3.2);gs.r=clamp(gs.r+Math.sin(t*.19)*dt*.025,2.2,4.7);
+   gm.position.set(POND.x+Math.cos(gs.a)*gs.r,.105,POND.z+Math.sin(gs.a)*gs.r*.82);gm.rotation.z=gs.spin;gs.next-=dt;
+   if((gs.next<=0||Q.get('pondleaf')==='shot')&&gs.nudge<=0){gs.nudge=1;gs.next=R(22,48);ripple(gm.position.x,gm.position.z);}
+   if(gs.nudge>0){gs.nudge=Math.max(0,gs.nudge-dt*.7);const k=_koi[0];k.position.x=gm.position.x-.38;k.position.z=gm.position.z+.18;k.rotation.y=Math.atan2(gm.position.x-k.position.x,gm.position.z-k.position.z);}
+  } window._pondLeafDbg=(on?'ride':'hidden')+'/'+gs.nudge.toFixed(2)+'/'+gs.spin.toFixed(2);}
  /* maple leaf lifecycle: wait, spiral down, one slow ripple, drift with the pond */
  {const L=window._leaf,lm=L.m,qa=Q.has('leaf');
   if(L.st==='wait'){L.t-=dt*(qa?60:1);
@@ -1778,6 +1791,7 @@ requestAnimationFrame(frame);
 /* ---------- init hooks ---------- */
 if(Q.has('play')||AUTO){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');}
 if(Q.get('gaze')==='bridge'){sora.x=BRG.x;sora.z=BRG.z;sora.st='gaze';sora.dir=-1.57;sora.gazePh='dusk';sora.wp=null;sora.bolt=false;sora.duskGaze=false;}
+if(Q.get('pondleaf')==='shot'){player.x=7;player.z=3;player.dir=-Math.PI/2;}
 if(Q.get('capcat')==='shot'){player.x=-3.6;player.z=-3;player.dir=Math.PI;}
 if(Q.get('frost')==='shot'){player.x=0;player.z=8;player.dir=Math.PI;}
 if(Q.get('windowcat')==='shot'){player.x=9;player.z=-10;player.dir=Math.PI;}
