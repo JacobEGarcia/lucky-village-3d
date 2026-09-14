@@ -337,10 +337,15 @@ const heronStalk={day:0,st:'idle',k:0,look:0,lift:0,land:0,gazed:false};
 /* A missed catch can still belong to the pond: the present heron takes the splash. */
 const heronFeed={active:false,t:0,from:new THREE.Vector3(),yaw:0,tx:0,tz:0};
 function beginHeronFeed(x,z){const pondside=Math.hypot(heron.position.x-POND.x,heron.position.z-POND.z)<POND.r+2.2;if(!heron.visible||!pondside||heronFeed.active)return false;const h=heronFeed;h.active=true;h.t=0;h.from.copy(heron.position);h.yaw=heron.rotation.y;h.tx=x;h.tz=z;return true;}
-function updHeron(dt){const hs=heronStalk,qa=Q.get('heronstalk')==='shot',feedQA=Q.get('heronfeed')==='shot',ridgeQA=Q.get('heronstalk')==='ridge'||(Q.get('sentinel')==='shot'||Q.get('sentinel')==='tail'),dawn=p<.145&&!raining(),active=hs.st==='stalk'||hs.st==='lift'||hs.st==='ridge';
+function updHeron(dt){const hs=heronStalk,qa=Q.get('heronstalk')==='shot',feedQA=Q.get('heronfeed')==='shot',roostQA=Q.get('heronroost')==='shot',ridgeQA=Q.get('heronstalk')==='ridge'||(Q.get('sentinel')==='shot'||Q.get('sentinel')==='tail'),dawn=p<.145&&!raining(),duskRoost=(phase()==='dusk'&&!raining())||roostQA,active=hs.st==='stalk'||hs.st==='lift'||hs.st==='ridge';
  if(feedQA&&!heronFeed.active){heron.visible=true;heron.position.set(POND.x-3.65,.05,POND.z-3.25);beginHeronFeed(POND.x-1.05,POND.z+.55);heronFeed.t=.52;}
  if(heronFeed.active){const h=heronFeed,u=heron.userData;if(!feedQA)h.t+=dt/1.28;const q=feedQA?.52:clamp(h.t,0,1),strike=Math.sin(q*Math.PI),e=strike*strike,dx=h.tx-h.from.x,dz=h.tz-h.from.z,yaw=Math.atan2(-dz,dx);heron.visible=true;heron.position.set(lerp(h.from.x,h.tx-Math.cos(yaw)*.48,e),h.from.y+Math.sin(q*Math.PI)*.22-e*.12,lerp(h.from.z,h.tz+Math.sin(yaw)*.48,e));heron.rotation.y=lerp(h.yaw,yaw,Math.min(1,strike*1.8));heron.rotation.z=-e*.19;u.head.position.set(.1+e*.54,2.36-e*1.62,.04);u.eye.position.set(.09+e*.53,2.41-e*1.62,.205);u.bill.position.set(.4+e*.56,2.34-e*1.67,.04);u.head.rotation.x=-e*.48;u.neck.position.set(.04+e*.2,1.94-e*.48,.03);u.neck.rotation.z=-.13-e*.8;u.wing.rotation.z=-.2-e*.22;u.wing2.rotation.z=.2+e*.22;u.meal.visible=q>.48&&q<.88;u.meal.position.set(.99,2.34-e*1.69,.04);u.meal.rotation.z=-.18;window._heronFeedDbg='lunge/'+q.toFixed(2)+'/'+e.toFixed(2);if(h.t>=1&&!feedQA){h.active=false;heron.position.copy(h.from);heron.rotation.y=h.yaw;heron.rotation.z=0;u.head.position.set(.1,2.36,.04);u.eye.position.set(.09,2.41,.205);u.bill.position.set(.4,2.34,.04);u.head.rotation.x=0;u.neck.position.set(.04,1.94,.03);u.neck.rotation.z=-.13;u.wing.rotation.z=-.2;u.wing2.rotation.z=.2;u.meal.visible=false;window._heronFeedDbg='fed/1.00/0';}else return;}
 
+ /* The pond's watchman returns at dusk, quiet on the bank after the morning hunt. */
+ if(duskRoost&&!active){const u=heron.userData,fade=roostQA?1:clamp(Math.min((p-.5)/.035,(.66-p)/.025),0,1),cool=clamp((p-.5)/.16,0,1);
+  heron.visible=fade>.01;heron.position.copy(u.base);heron.position.y=.05;heron.rotation.set(0,-.45,Math.sin(t*.17)*.004);
+  u.head.position.set(.1,2.36-.035*cool,.04);u.head.rotation.set(.08*cool,Math.sin(t*.12)*.055,0);u.eye.position.set(.09,2.41-.035*cool,.205);u.bill.position.set(.4,2.34-.035*cool,.04);u.bill.rotation.set(0,0,-Math.PI/2);u.neck.position.set(.04,1.94-.025*cool,.03);u.neck.rotation.set(0,0,-.13);u.wing.rotation.z=-.2;u.wing2.rotation.z=.2;u.meal.visible=false;
+  heron.traverse(o=>{if(o.material){o.material.transparent=true;o.material.opacity=fade;}});window._heronDbg='roost/'+fade.toFixed(2)+'/one-leg/'+cool.toFixed(2);return;}
  if((qa||Q.get('heronstalk')==='lift'||Q.get('heronstalk')==='ridge'||Q.get('heronstalk')==='ridgetest'||(Q.get('sentinel')==='shot'||Q.get('sentinel')==='tail')||dawn)&&hs.day!==day&&hs.st==='idle'){hs.day=day;hs.st=(Q.get('heronstalk')==='ridge'||Q.get('heronstalk')==='ridgetest'||(Q.get('sentinel')==='shot'||Q.get('sentinel')==='tail'))?'ridge':Q.get('heronstalk')==='lift'?'lift':'stalk';hs.k=qa?.58:0;hs.look=0;hs.lift=0;hs.land=0;hs.gazed=false;sora.inside=false;sora.op=1;applyOp(sora);sora.x=7.1;sora.z=-3.7;sora.st='heronStalk';sora.wp=null;sora.bolt=false;}
  let fade=Q.get('heron')==='shot'||qa||ridgeQA||active?1:(dawn?clamp((.145-p)/.035,0,1):0);heron.visible=fade>.01;heron.traverse(o=>{if(o.material){o.material.transparent=true;o.material.opacity=fade;}});
  if(hs.st==='stalk'){hs.look=qa?.72:(Math.sin(t*.72)*.5+.5);const turn=clamp((hs.look-.66)*3,0,1),u=heron.userData;u.head.rotation.y=turn*.62;u.eye.position.z=.205-turn*.1;u.bill.rotation.y=turn*.2;heron.rotation.z=Math.sin(t*.17)*.006;}
@@ -2013,14 +2018,14 @@ function updFx(dt){
  if((Q.get('sentinel')==='shot'||Q.get('sentinel')==='tail')){player.x=5.8;player.z=-9;player.dir=Math.PI;sora.x=8;sora.z=-10.4;}
  if(Q.get('heronstalk')==='ridge'){player.x=7;player.z=-10;player.dir=Math.PI;}
  if(Q.get('heronstalk')==='shot'){player.x=7.8;player.z=1.8;player.dir=-Math.PI/2;}
- if(Q.get('heron')==='shot'){player.x=9;player.z=2.6;player.dir=-Math.PI/2;}
+ if(Q.get('heron')==='shot'||Q.get('heronroost')==='shot'){player.x=9;player.z=2.6;player.dir=-Math.PI/2;}
  if(Q.get('mist')==='shot'){player.x=8.5;player.z=3;player.dir=-Math.PI/2;}
  if(Q.get('hotaru')==='shot'){player.x=15;player.z=5;player.dir=Math.PI;}
  if(Q.get('basin')==='shot'){player.x=-6.4;player.z=3.3;player.dir=-Math.PI/2;}
  if((Q.get('sentinel')==='shot'||Q.get('sentinel')==='tail')){player.x=5.8;player.z=-9;player.dir=Math.PI;sora.x=8;sora.z=-10.4;}
  if(Q.get('heronstalk')==='ridge'){player.x=7;player.z=-10;player.dir=Math.PI;}
  if(Q.get('heronstalk')==='shot'){player.x=7.8;player.z=1.8;player.dir=-Math.PI/2;}
-if(Q.get('heron')==='shot'){player.x=9;player.z=2.6;player.dir=-Math.PI/2;}
+if(Q.get('heron')==='shot'||Q.get('heronroost')==='shot'){player.x=9;player.z=2.6;player.dir=-Math.PI/2;}
 if(Q.get('mist')==='shot'){player.x=8.5;player.z=3;player.dir=-Math.PI/2;}
 if(Q.get('hotaru')==='shot'){player.x=15;player.z=5;player.dir=Math.PI;}
 if(Q.get('basin')==='shot'){player.x=-6.4;player.z=3.3;player.dir=-Math.PI/2;}
