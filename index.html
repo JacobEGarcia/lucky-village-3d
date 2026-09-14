@@ -512,6 +512,20 @@ function makeLantern(x,z){
 }
 makeLantern(-2.4,14);makeLantern(2.4,10);makeLantern(-2.4,4);makeLantern(2.4,-2);makeLantern(-3.6,-9.4);makeLantern(3.6,-9.4);
 makeLantern(21.61,-7.17);makeLantern(23.59,-7.89); /* flanking the taiko-bashi south landing */
+/* small vegetable rows and the old scarecrow at their far edge */
+const FIELD={x:-20,z:10},scarecrow=new THREE.Group();
+{const soil=mat(0x4a3828,.98),leaf=mat(0x56704a,.9),wood=mat(0x60442d,.95),cloth=mat(0x88735b,.95);
+ for(let r=0;r<3;r++){const bed=new THREE.Mesh(new THREE.BoxGeometry(6,.16,.72),soil);bed.position.set(FIELD.x,.08,FIELD.z+r*1.25);bed.rotation.y=.06;scene.add(bed);
+  for(let j=0;j<7;j++){const crop=new THREE.Mesh(new THREE.SphereGeometry(.18,7,5),leaf);crop.scale.set(1.1,.65,1);crop.position.set(FIELD.x-2.55+j*.84,.28,FIELD.z+r*1.25);scene.add(crop);}}
+ const post=new THREE.Mesh(new THREE.CylinderGeometry(.08,.11,3.4,7),wood);post.position.y=1.7;scarecrow.add(post);
+ const arm=new THREE.Mesh(new THREE.CylinderGeometry(.065,.08,3.25,7),wood);arm.rotation.z=Math.PI/2;arm.position.y=2.55;scarecrow.add(arm);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.38,9,7),mat(0xb99a68,.95));head.scale.y=1.08;head.position.y=3.08;scarecrow.add(head);
+ const hat=new THREE.Mesh(new THREE.ConeGeometry(.62,.52,9),mat(0x66503a,.98));hat.position.y=3.55;scarecrow.add(hat);
+ const brim=new THREE.Mesh(new THREE.CylinderGeometry(.72,.72,.08,12),mat(0x66503a,.98));brim.position.y=3.34;scarecrow.add(brim);
+ const coat=new THREE.Mesh(new THREE.ConeGeometry(.67,1.45,4),cloth);coat.rotation.y=Math.PI/4;coat.position.y=1.72;scarecrow.add(coat);
+ for(const sx of[-1,1]){const sleeve=new THREE.Mesh(new THREE.CylinderGeometry(.18,.25,.95,7),cloth);sleeve.rotation.z=Math.PI/2;sleeve.position.set(sx*.85,2.48,0);scarecrow.add(sleeve);}
+ scarecrow.position.set(-23.25,0,FIELD.z+1.25);scarecrow.rotation.y=-.08;scene.add(scarecrow);}
+const scareBirdPos=[[-.95,2.73,.02],[.02,2.73,.02],[1.02,2.73,.02]];
 /* telephone wire sparrows: one quiet dawn line above the street */
 const wireA={x:-4,z:8},wireB={x:4,z:8},sparrows=[];
 (function(){const poleM=mat(0x33271e,.92);for(const x of[wireA.x,wireB.x]){const pole=new THREE.Mesh(new THREE.CylinderGeometry(.07,.1,5.2,7),poleM);pole.position.set(x,2.6,wireA.z);pole.castShadow=true;scene.add(pole);
@@ -522,8 +536,9 @@ const wireA={x:-4,z:8},wireB={x:4,z:8},sparrows=[];
   const head=new THREE.Mesh(new THREE.SphereGeometry(.085,8,6),cream);head.position.set(0,.09,.1);b.add(head);
   const beak=new THREE.Mesh(new THREE.ConeGeometry(.025,.09,5),mat(0x9a6c2d,.7));beak.rotation.x=Math.PI/2;beak.position.set(0,.07,.21);b.add(beak);
   b.userData={slot:i,from:i,to:i,k:1,next:R(4,9),away:0,flit:false};scene.add(b);sparrows.push(b);}})();
-function updSparrows(dt){const dawn=phase()==='dawn'&&!raining();let away=0;
- for(let i=0;i<sparrows.length;i++){const b=sparrows[i],u=b.userData;if(!dawn){b.visible=false;u.away=0;continue;}b.visible=true;
+function updSparrows(dt){const dawn=phase()==='dawn'&&!raining(),dusk=phase()==='dusk'&&!raining(),onScare=dusk&&(day%3!==0||Q.has('scarecrow'));let away=0;
+ for(let i=0;i<sparrows.length;i++){const b=sparrows[i],u=b.userData;if(onScare){const q=scareBirdPos[i];b.visible=true;b.position.set(scarecrow.position.x+q[0],q[1],scarecrow.position.z+q[2]+.22);b.rotation.y=Math.PI;b.rotation.z=Math.sin(t*.8+i)*.025;u.away=0;continue;}
+  if(!dawn){b.visible=false;u.away=0;continue;}b.visible=true;
   const sx=-1.8+u.from*1.8,tx=-1.8+u.to*1.8;if(u.k<1)u.k=Math.min(1,u.k+dt*.9);let x=lerp(sx,tx,u.k),y=4.94+Math.sin(u.k*Math.PI)*.18,z=8;
   if(u.away>0){u.away-=dt;away++;const k=clamp(1-u.away/5,0,1);if(k<.5){x+=k*9;y+=Math.sin(k*Math.PI*2)*2;}else{x+=(1-k)*9;y+=Math.sin(k*Math.PI*2)*2;}if(u.away<=0){u.from=u.to;u.k=1;}}
   b.position.set(x,y,z);b.rotation.y=Math.PI;b.rotation.z=Math.sin(t*2+i)*.04;
@@ -531,7 +546,7 @@ function updSparrows(dt){const dawn=phase()==='dawn'&&!raining();let away=0;
  }
  const under=Math.abs(sora.z-8)<1.8&&sora.x>-5&&sora.x<5;
  if(dawn&&under&&!sparrows.some(b=>b.userData.away>0)&&!window._sparrowFlush){const b=sparrows[1];b.userData.away=5;window._sparrowFlush=1;}
- window._sparrowDbg=(dawn?'line':'off')+'/'+away+'/'+(window._sparrowFlush||0);}
+ window._sparrowDbg=(onScare?'scarecrow/3':(dawn?'line':'off'))+'/'+away+'/'+(window._sparrowFlush||0);}
 /* far ridge evening train: one silent warm line per dusk */
 const train=new THREE.Group(),trainCars=[];const trainS={on:false,k:0,day:0,watched:false};
 {for(let i=0;i<5;i++){const car=new THREE.Group(),shell=new THREE.Mesh(new THREE.BoxGeometry(2.15,.7,.62),mat(0x252735,.7,.2));car.add(shell);
@@ -1699,6 +1714,7 @@ requestAnimationFrame(frame);
 /* ---------- init hooks ---------- */
 if(Q.has('play')||AUTO){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');}
 if(Q.get('gaze')==='bridge'){sora.x=BRG.x;sora.z=BRG.z;sora.st='gaze';sora.dir=-1.57;sora.gazePh='dusk';sora.wp=null;sora.bolt=false;sora.duskGaze=false;}
+if(Q.get('scarecrow')==='shot'){player.x=-13;player.z=11;player.dir=-Math.PI/2;}
 if(Q.get('mist')==='shot'){player.x=4.8;player.z=-1;player.dir=Math.PI/2;}
 if(Q.has('train')){sora.x=8;sora.z=-8;sora.st='sit';sora.timer=30;sora.wp=null;sora.lastPh=phase();sora.inside=false;sora.op=1;}
 if(Q.has('sparrows')){sora.x=0;sora.z=Q.get('sparrows')==='shot'?8:4;sora.st='sit';sora.timer=30;sora.wp=null;sora.shrineDay=day;sora.lastPh=phase();if(Q.get('sparrows')==='shot'){sparrows[1].userData.away=3.7;window._sparrowFlush=1;}}
