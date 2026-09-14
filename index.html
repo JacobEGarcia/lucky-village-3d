@@ -578,6 +578,13 @@ const bflies=[];
   const w2=new THREE.Mesh(new THREE.PlaneGeometry(.24,.3),wm);w2.rotation.x=-Math.PI/2;w2.position.x=.13;p2.add(w2);
   g.add(p1);g.add(p2);g.userData={ph:R(0,7),ax:anchors[i][0],az:anchors[i][1],r:R(2.5,4.5),sp:R(.35,.6),wm:wm,p1:p1,p2:p2};
   scene.add(g);bflies.push(g);}})();
+/* one clear-evening dragonfly: lacquer-dark body, glass wings, no swarm */
+const dragon=new THREE.Group(),dragonWing=new THREE.MeshBasicMaterial({color:0xd8e5df,transparent:true,opacity:.48,side:THREE.DoubleSide,depthWrite:false});
+{const body=new THREE.Mesh(new THREE.CylinderGeometry(.025,.04,.42,7),mat(0x294f55,.45,.25));body.rotation.x=Math.PI/2;dragon.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.055,8,6),mat(0x9b3e32,.5));head.position.z=.23;dragon.add(head);
+ for(const sx of[-1,1])for(const zz of[-.07,.08]){const w=new THREE.Mesh(new THREE.PlaneGeometry(.36,.1),dragonWing);w.position.set(sx*.19,0,zz);w.rotation.x=-Math.PI/2;w.rotation.z=sx*(zz>0?.25:-.15);dragon.add(w);}
+ dragon.visible=false;scene.add(dragon);}
+const dragonS={a:0,on:false,pounced:false,lift:0,wing:0};
 /* ---------- the cat ---------- */
 function makeCat(col,patch){
  const g=new THREE.Group();
@@ -696,7 +703,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mo||0).toFixed(2)+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mo||0).toFixed(2)+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -845,6 +852,30 @@ function burstAt(x,y,z,col,n){
  const m=new THREE.PointsMaterial({color:col,size:.14,transparent:true,opacity:1});
  const pts=new THREE.Points(g,m);pts.userData.vel=vel;scene.add(pts);
  burst={pts:pts,vel:vel,life:1.7};
+}
+function updDragon(dt){
+ const clear=phase()==='dusk'&&!raining();dragonS.on=clear;if(!clear){dragon.visible=false;dragonS.pounced=false;dragonS.lift=0;return;}
+ dragon.visible=true;dragonS.a+=dt*.23;dragonS.wing+=dt*19;
+ const edgeA=-1.2+Math.sin(dragonS.a)*1.05,rr=POND.r-.15+Math.sin(dragonS.a*.63)*.42;
+ let x=POND.x+Math.cos(edgeA)*rr,z=POND.z+Math.sin(edgeA)*rr,y=.85+Math.sin(t*.8)*.16;
+ if(dragonS.lift>0){dragonS.lift-=dt;y+=1.7*(1-dragonS.lift/2.1);x+=.9*(1-dragonS.lift/2.1);}
+ dragon.position.set(x,y,z);dragon.rotation.y=-edgeA+.2;
+ for(let i=2;i<dragon.children.length;i++)dragon.children[i].rotation.x=-Math.PI/2+Math.sin(dragonS.wing+i)*.32;
+ window._dragonDbg=(dragonS.lift>0?'lift':'hover')+'/'+(dragonS.pounced?'spent':'ready');
+ if(Q.get('dragon')==='shot'){sora.st='dragonPounce';sora.pounceK=.5;sora.dragonWatch=true;sora.dragonResume=sora.dragonResume||{st:'sit',timer:30};dragonS.pounced=true;dragonS.lift=1.5;}
+ /* if she is already nearby, watching interrupts but remembers the old routine */
+ if(sora&&state==='play'&&!sora.rainWatch&&!sora.rainGo){const d=Math.hypot(sora.x-x,sora.z-z);
+  if(d<5.2&&!sora.dragonWatch&&!dragonS.pounced&&sora.st!=='dragonPounce'){
+   sora.dragonResume={st:sora.st,wp:sora.wp&&sora.wp.slice(),timer:sora.timer,napping:!!sora.napping,napBench:!!sora.napBench,tending:!!sora.tending,gazeP:sora.gazeP&&sora.gazeP.slice(),gazePh:sora.gazePh};
+   const u=sora.g.userData;u.head.position.set(0,1.08,.1);u.body.position.y=.5;u.body.scale.set(1,1.12,.92);u.tail.rotation.z=-.5;
+   sora.st='dragonWatch';sora.wp=null;sora.dragonWatch=true;sora.dragonT=0;}
+  if(sora.st==='dragonWatch'){sora.dragonT+=dt;const dx=x-sora.x,dz=z-sora.z;sora.dir=Math.atan2(dx,dz);sora.g.rotation.y=sora.dir;sora.g.position.set(sora.x,groundY(sora.x,sora.z),sora.z);
+   sora.g.userData.head.rotation.y=Math.sin(t*.45)*.08;sora.g.userData.head.rotation.x=-.12;window._soraDragon='watch';
+   if((d<2.45||Q.has('dragon'))&&sora.dragonT>(Q.has('dragon')?.18:.8)){sora.st='dragonPounce';sora.pounceK=0;dragonS.pounced=true;dragonS.lift=2.1;}}
+  else if(sora.st==='dragonPounce'){sora.pounceK=Q.get('dragon')==='shot'?.5:Math.min(1,sora.pounceK+dt/1.05);const k=sora.pounceK,hop=Math.sin(k*Math.PI);
+   const dx=x-sora.x,dz=z-sora.z,dd=Math.max(.01,Math.hypot(dx,dz));sora.g.position.set(sora.x+dx/dd*.7*hop,groundY(sora.x,sora.z)+.36*hop,sora.z+dz/dd*.7*hop);sora.g.rotation.y=Math.atan2(dx,dz);window._soraDragon='pounce';
+   if(k>=1){const r=sora.dragonResume||{};sora.st=r.st||'pause';sora.wp=r.wp||null;sora.timer=r.timer||1;sora.napping=r.napping;sora.napBench=r.napBench;sora.tending=r.tending;sora.gazeP=r.gazeP;sora.gazePh=r.gazePh;sora.dragonWatch=false;sora.dragonResume=null;sora.g.userData.head.rotation.x=0;sora.g.userData.head.rotation.y=0;window._soraDragon='resume';}}
+ }
 }
 function updBurst(dt){
  if(!burst)return;
@@ -1554,13 +1585,14 @@ function frame(now){
  updDay();
  if(state!=='menu'){updPlayer(dt);updNeighbor(mugi,MUGIWPS,dt);updNeighbor(sora,SORAWPS,dt);updFish(dt);updAct();}
  ghostFollow();
- updFx(dt);updPuddles(dt);updRain(dt);updHig(dt);updBird(dt);updNoren(dt);updMeteor(dt);updCam(dt);drawFloats();
+ updDragon(dt);updFx(dt);updPuddles(dt);updRain(dt);updHig(dt);updBird(dt);updNoren(dt);updMeteor(dt);updCam(dt);drawFloats();
  renderer.render(scene,cam);
 }
 requestAnimationFrame(frame);
 /* ---------- init hooks ---------- */
 if(Q.has('play')||AUTO){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');}
 if(Q.get('gaze')==='bridge'){sora.x=BRG.x;sora.z=BRG.z;sora.st='gaze';sora.dir=-1.57;sora.gazePh='dusk';sora.wp=null;sora.bolt=false;sora.duskGaze=false;}
+if(Q.has('dragon')){sora.x=16.4;sora.z=-8.8;sora.st=Q.get('dragon')==='shot'?'dragonPounce':'sit';sora.timer=30;sora.wp=null;sora.napDay=day;dragonS.a=0;if(Q.get('dragon')==='shot'){sora.pounceK=.5;sora.dragonWatch=true;sora.dragonResume={st:'sit',timer:30};dragonS.pounced=true;dragonS.lift=1.5;}}
 if(Q.has('puddles')){wakePuddles();const q=puddles[0];sora.x=q.position.x;sora.z=q.position.z+.48;sora.st='puddle';sora.puddle=q;sora.puddleT=Q.get('puddles')==='sniff'?3.25:2;sora.rainResume='roam';sora.napDay=day;sora.wp=null;sora.bolt=false;}
 if(Q.get('gaze')==='rain'){sora.x=6.6;sora.z=-1.2;sora.st='gaze';sora.dir=Math.PI/2;sora.gazePh=null;sora.gazeP=null;sora.rainSeen=true;sora.rainWatch=true;sora.rainGo=false;sora.wp=null;sora.bolt=false;}
 if(Q.get('gaze')==='napcircle'){sora.st='napCircle';sora.circleA=-Math.PI/2;sora.circleEnd=sora.circleA+Math.PI*2;sora.wp=null;sora.bolt=false;sora.napDay=day;}
