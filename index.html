@@ -470,6 +470,25 @@ const laundry=[];
   for(const sx of[-.38,.38]){const peg=new THREE.Mesh(new THREE.BoxGeometry(.07,.18,.08),mat(0x8a6840,.9));peg.position.set(sx,0,.03);g.add(peg);}
   g.position.set(x,lineY,z);g.rotation.y=Math.atan2(bz-az,bx-ax);g.userData={ph:i*1.37,w:[.75,1.15,.88,1.35][i],cloth:cloth};scene.add(g);laundry.push(g);}
 })();
+/* mid-morning laundry sparrows: perch, burst when Sora passes below, then regroup */
+const laundryBirds=[];const laundryBirdS={st:'perch',k:0,cool:0,flushes:0};
+(function(){for(let i=0;i<4;i++){const b=new THREE.Group(),brown=mat(i%2?0x665849:0x796957,.9),cream=mat(0xd4c7aa,.92),beakm=mat(0xa97833,.82);
+ const body=new THREE.Mesh(new THREE.SphereGeometry(.115,8,6),brown);body.scale.set(1,.86,1.38);b.add(body);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.082,8,6),cream);head.position.set(0,.095,.095);b.add(head);
+ const beak=new THREE.Mesh(new THREE.ConeGeometry(.024,.08,5),beakm);beak.rotation.x=Math.PI/2;beak.position.set(0,.075,.205);b.add(beak);
+ const w1=new THREE.Mesh(new THREE.SphereGeometry(.08,7,5),brown);w1.scale.set(.28,.85,1.4);w1.position.set(.1,0,0);b.add(w1);const w2=w1.clone();w2.position.x=-.1;b.add(w2);
+ b.userData={i:i,w1:w1,w2:w2,ph:i*1.7};scene.add(b);laundryBirds.push(b);}})();
+function updLaundryBirds(dt){const q=Q.get('laundrybirds'),morning=(p>=.16&&p<.36&&!raining())||q,ls=laundryBirdS;ls.cool=Math.max(0,ls.cool-dt);
+ const under=sora.x>-7.8&&sora.x<4.8&&Math.abs(sora.z+13.4)<1.5;
+ if(morning&&under&&ls.st==='perch'&&ls.cool<=0&&q!=='perch'){ls.st='scatter';ls.k=0;ls.flushes++;}
+ if(q==='perch'){ls.st='perch';ls.k=0;}else if(q==='scatter'){ls.st='scatter';ls.k=.32;}else if(q==='regroup'){ls.st='regroup';ls.k=.62;}
+ if(ls.st==='scatter'&&q!=='scatter'){ls.k=Math.min(1,ls.k+dt/1.05);if(ls.k>=1){ls.st='regroup';ls.k=0;}}
+ else if(ls.st==='regroup'&&q!=='regroup'){ls.k=Math.min(1,ls.k+dt/1.7);if(ls.k>=1){ls.st='perch';ls.k=0;ls.cool=4;}}
+ for(let i=0;i<laundryBirds.length;i++){const b=laundryBirds[i],u=b.userData,slot=[.1,.31,.57,.78][i],bx=lerp(-7,4,slot),bz=lerp(-13,-13.8,slot),k=ls.k; b.visible=!!morning;if(!morning)continue;
+  let x=bx,y=3.4,z=bz,wing=0;if(ls.st==='scatter'){const e=Math.sin(k*Math.PI*.5),side=(i-1.5)*1.35;x+=side*e;y+=Math.sin(k*Math.PI)*2.2+k*1.2;z+=(i%2?1:-1)*e*1.6;wing=Math.sin(t*25+u.ph)*1.05;}
+  else if(ls.st==='regroup'){const e=1-k,x0=bx+(i-1.5)*1.35,y0=4.6,z0=bz+(i%2?1:-1)*1.6;x=lerp(bx,x0,e);y=3.4+Math.sin(e*Math.PI)*1.2+e*.35;z=lerp(bz,z0,e);wing=Math.sin(t*22+u.ph)*.65*e;}
+  b.position.set(x,y,z);b.rotation.y=Math.atan2(-.8,11);b.rotation.z=Math.sin(t*.7+u.ph)*.018;u.w1.rotation.z=wing;u.w2.rotation.z=-wing;}
+ window._laundryBirdDbg=(morning?ls.st:'off')+'/'+ls.k.toFixed(2)+'/'+ls.flushes;}
 
 function makeStall(x,z){
  const g=new THREE.Group();const wood=mat(0x4a3220,.9);
@@ -919,7 +938,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' pondleaf='+(window._pondLeafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+' window='+(window._windowDbg||'x')+' frost='+(window._frostDbg||'x')+' capcat='+(window._sleepCapDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' kite='+(window._kiteDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' jizo='+(window._jizoDbg||'x')+' well='+(window._wellDbg||'x')+' chozu='+(window._chozuDbg||'x')+' post='+(window._postDbg||'x')+' wash='+(window._laundryDbg||'x')+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' heron='+(window._heronDbg||'x')+' stalk='+(window._heronStalkDbg||'x')+' sentinel='+(window._sentinelDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' pondleaf='+(window._pondLeafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+' window='+(window._windowDbg||'x')+' frost='+(window._frostDbg||'x')+' capcat='+(window._sleepCapDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' kite='+(window._kiteDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' jizo='+(window._jizoDbg||'x')+' well='+(window._wellDbg||'x')+' chozu='+(window._chozuDbg||'x')+' post='+(window._postDbg||'x')+' wash='+(window._laundryDbg||'x')+' lbird='+(window._laundryBirdDbg||'x')+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' heron='+(window._heronDbg||'x')+' stalk='+(window._heronStalkDbg||'x')+' sentinel='+(window._sentinelDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1733,6 +1752,7 @@ if(Q.get('pondleaf')==='shot'){player.x=7;player.z=3;player.dir=-Math.PI/2;}
 if(Q.get('capcat')==='shot'){player.x=-3.6;player.z=-3;player.dir=Math.PI;}
 if(Q.get('frost')==='shot'){player.x=0;player.z=8;player.dir=Math.PI;}
 if(Q.get('windowcat')==='shot'){player.x=9;player.z=-10;player.dir=Math.PI;}
+if(Q.has('laundrybirds')){player.x=-1;player.z=-6;player.dir=Math.PI;sora.x=-1;sora.z=-13.4;sora.st='sit';sora.timer=30;sora.wp=null;sora.shrineDay=day;sora.lastPh=phase();}
 if(Q.get('laundry')==='shot'){player.x=-1;player.z=-5;player.dir=Math.PI;}
 if(Q.get('kite')==='shot'){player.x=-1;player.z=11;player.dir=-Math.PI/2;}
 if(Q.get('koiplip')==='shot'){sora.x=14;sora.z=3.3;sora.st='sit';sora.wp=null;}
@@ -1905,7 +1925,7 @@ function frame(now){
  updDay();
  if(state!=='menu'){updPlayer(dt);updNeighbor(mugi,MUGIWPS,dt);updNeighbor(sora,SORAWPS,dt);updFish(dt);updAct();}
  ghostFollow();
- updDragon(dt);updGingko(dt);updSparrows(dt);updTrain(dt);updWindowCat(dt);updLanternSleeper();updPostbox(dt);updJizoSeason();updWell();updChozu();updHeron(dt);updFx(dt);updPuddles(dt);updRain(dt);updHig(dt);updBird(dt);updNoren(dt);updMeteor(dt);updCam(dt);drawFloats();
+ updDragon(dt);updGingko(dt);updSparrows(dt);updLaundryBirds(dt);updTrain(dt);updWindowCat(dt);updLanternSleeper();updPostbox(dt);updJizoSeason();updWell();updChozu();updHeron(dt);updFx(dt);updPuddles(dt);updRain(dt);updHig(dt);updBird(dt);updNoren(dt);updMeteor(dt);updCam(dt);drawFloats();
  renderer.render(scene,cam);
 }
 requestAnimationFrame(frame);
