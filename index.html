@@ -966,8 +966,7 @@ const lanternSleeper=new THREE.Group(),sleepBody=new THREE.Group();
  const tail=new THREE.Mesh(new THREE.TorusGeometry(.38,.075,8,16,4.8),patch);tail.rotation.x=Math.PI/2;tail.position.set(-.08,.16,.02);sleepBody.add(tail);
  const snowPillow=new THREE.Group(),snow=mat(0xdbe5e2,.98);for(const[x,y,z,sc]of[[-.04,.28,.15,.3],[-.22,.26,.08,.24],[.14,.27,.06,.22],[.03,.33,-.02,.19]]){const q=new THREE.Mesh(new THREE.DodecahedronGeometry(sc,1),snow);q.scale.set(1.4,.55,1);q.position.set(x,y,z);snowPillow.add(q);}snowPillow.position.set(-.1,.03,.02);sleepBody.add(snowPillow);lanternSleeper.userData.snow=snowPillow;
  lanternSleeper.add(sleepBody);lanternSleeper.position.set(-3.6,1.92,-9.4);lanternSleeper.rotation.y=.35;lanternSleeper.visible=false;scene.add(lanternSleeper);}
-function updLanternSleeper(){const winter=Q.has('winter')||((day-1)%24)>=18,on=winter&&p<.145&&!raining(),cold=Q.get('snowpillow')==='shot'||(winter&&p<.105&&!raining());lanternSleeper.visible=on||Q.get('snowpillow')==='shot';lanternSleeper.userData.snow.visible=cold;
- const breath=.985+.018*Math.sin(t*1.65);sleepBody.scale.set(1,breath,1);sleepBody.position.y=(breath-1)*.14;window._sleepCapDbg=((on||Q.get('snowpillow')==='shot')?'sleep':'gone')+'/'+breath.toFixed(3)+'/'+(cold?'snow':'bare');}
+function updLanternSleeper(){const winter=Q.has('winter')||((day-1)%24)>=18,on=winter&&p<.145&&!raining(),qa=Q.get('snowpillow'),cold=qa==='shot'||qa==='melt'||(winter&&p<.105&&!raining());lanternSleeper.visible=on||!!qa;lanternSleeper.userData.snow.visible=cold;const melt=qa==='melt'?.82:(winter&&phase()==='dawn'&&!raining()?clamp((p-.055)/.085,0,1):0),snow=lanternSleeper.userData.snow;snow.position.y=.03-melt*.07;snow.rotation.z=-melt*.035;for(let i=0;i<snow.children.length;i++){const q=snow.children[i],spread=melt*(.05+i*.014);q.scale.set(1.4+spread,.55-melt*(.16+i*.022),1+melt*.08);q.position.y=[.28,.26,.27,.33][i]-melt*(.04+i*.012);q.rotation.y=melt*(i-1.5)*.06;}const breath=.985+.018*Math.sin(t*1.65);sleepBody.scale.set(1,breath,1);sleepBody.position.y=(breath-1)*.14;window._sleepCapDbg=((on||qa)?'sleep':'gone')+'/'+breath.toFixed(3)+'/'+(cold?'snow':'bare')+'/'+(melt>.02?'soft':'crisp')+'/'+melt.toFixed(2);}
 const player={g:makeCat(0xf4ead0,0xc73e2e),x:0,z:8,dir:Math.PI,hop:0,moving:false,joy:0};
 scene.add(player.g);
 /* obstacles for simple collision */
@@ -1886,7 +1885,7 @@ if(Q.get('bridgesnow')==='shot'){player.x=20.6;player.z=-3.5;player.dir=2.0;}
 if(Q.get('streammist')==='shot'){player.x=20.6;player.z=-3.5;player.dir=2.0;}
 if(Q.get('riverice')==='shot'){player.x=20.6;player.z=-3.5;player.dir=2.0;}
 if(Q.get('icereflect')==='shot'){player.x=20.6;player.z=-3.5;player.dir=2.0;}
-if(Q.get('snowpillow')==='shot'){player.x=-3.0;player.z=-7.6;player.dir=Math.PI;}
+if(Q.get('snowpillow')){player.x=-3.0;player.z=-7.6;player.dir=Math.PI;}
 if(Q.get('stoneice')==='shot'){player.x=26.2;player.z=-1.2;player.dir=Math.PI;}
 if(Q.get('linesnow')==='shot'){player.x=-1.5;player.z=-8.5;player.dir=Math.PI;}
 if(Q.get('plazafrost')==='shot'){player.x=-1;player.z=-7.5;player.dir=Math.PI;}
