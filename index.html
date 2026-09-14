@@ -999,9 +999,9 @@ function makeCat(col,patch){
  const earR=new THREE.Mesh(earGeo,c2);earR.position.set(.17,.26,-.04);earR.rotation.z=-.18;hg.add(earR);
  /* happy closed eyes: thin arcs */
  const eyeGeo=new THREE.TorusGeometry(.055,.014,6,10,Math.PI);
- const eyeM=new THREE.MeshBasicMaterial({color:0x4a3a30});
+ const eyeM=new THREE.MeshBasicMaterial({color:0x4a3a30}),eyes=[];
  for(const sx of[-.11,.11]){const e=new THREE.Mesh(eyeGeo,eyeM);
-  e.position.set(sx,.02,.275);e.rotation.x=-.35;hg.add(e);}
+  e.position.set(sx,.02,.275);e.rotation.x=-.35;hg.add(e);eyes.push(e);}
  /* cheeks */
  const chM=new THREE.MeshBasicMaterial({color:0xe8786e,transparent:true,opacity:.45});
  for(const sx of[-.16,.16]){const ch=new THREE.Mesh(new THREE.SphereGeometry(.035,8,6),chM);
@@ -1021,7 +1021,7 @@ function makeCat(col,patch){
  /* soft blob shadow */
  const sh=new THREE.Mesh(new THREE.CircleGeometry(.44,20),new THREE.MeshBasicMaterial({color:0x0c0a10,transparent:true,opacity:.28}));
  sh.rotation.x=-Math.PI/2;sh.position.y=.02;g.add(sh);
- g.userData={body,head:hg,tail,tip,sh,pawR,earL,earR};
+ g.userData={body,head:hg,tail,tip,sh,pawR,earL,earR,eyes};
  return g;
 }
 /* winter dawn sleeper on the broad stone cap: a small third village cat */
@@ -1366,7 +1366,7 @@ function winterMarketEnd(){return (Q.has('winter')||((day-1)%24)>=18)?.72:.46;}
 function updNeighbor(nb,wps,dt){
  nb.timer-=dt;
  /* night passerby attention: lift, track the moving player, then settle back */
- const nq=Q.get('nightwatch'),night=phase()==='night',pd0=Math.hypot(player.x-nb.x,player.z-nb.z),near=nq?(nq==='mugi'?nb===mugi:nq==='sora'?nb===sora:true):(night&&player.moving&&pd0<3.2),clear=!nq&&(!night||pd0>4.25||!player.moving);if(near&&!nb.nightWatch){nb.nightWatch=true;nb.nightWatchK=0;nb.nightWatchOld={st:nb.st,wp:nb.wp&&nb.wp.slice(),timer:nb.timer,dir:nb.dir,napping:!!nb.napping,tending:!!nb.tending};}if(nb.nightWatch){const u=nb.g.userData,target=clear?0:1;nb.nightWatchK=lerp(nb.nightWatchK,target,Math.min(1,dt*(clear?1.7:3.4)));const dx=player.x-nb.x,dz=player.z-nb.z,want=Math.atan2(dx,dz),rel=clamp(want-nb.dir,-1.15,1.15);u.head.position.y=lerp(.67,1.09,nb.nightWatchK);u.head.position.z=lerp(.25,.1,nb.nightWatchK);u.head.rotation.x=lerp(.36,-.12,nb.nightWatchK);u.head.rotation.y=rel*nb.nightWatchK;u.earL.rotation.z=.18+nb.nightWatchK*.08;u.earR.rotation.z=-.18-nb.nightWatchK*.08;nb.g.position.set(nb.x,groundY(nb.x,nb.z),nb.z);nb.g.rotation.y=nb.dir;window._nightWatchDbg=(nb===mugi?'mugi':'sora')+'/'+(clear?'settle':'watch')+'/'+nb.nightWatchK.toFixed(2)+'/'+pd0.toFixed(2);if(clear&&nb.nightWatchK<.025){const o=nb.nightWatchOld||{};nb.nightWatch=false;nb.st=o.st||'pause';nb.wp=o.wp||null;nb.timer=o.timer||1;nb.dir=o.dir??nb.dir;nb.napping=o.napping;nb.tending=o.tending;u.head.rotation.x=0;u.head.rotation.y=0;u.head.position.set(0,1.08,.1);u.earL.rotation.z=.18;u.earR.rotation.z=-.18;}return;}
+ const nq=Q.get('nightwatch'),bq=Q.get('nightblink'),night=phase()==='night',pd0=Math.hypot(player.x-nb.x,player.z-nb.z),pick=nq?(nq==='mugi'?nb===mugi:nq==='sora'?nb===sora:true):bq?(bq==='sora'?nb===sora:nb===mugi):false,near=pick||(night&&player.moving&&pd0<3.2),greet=night&&!player.moving&&pd0<3.2,clear=!pick&&!bq&&(!night||pd0>4.25||(!player.moving&&!greet));if(near&&!nb.nightWatch){nb.nightWatch=true;nb.nightWatchK=0;nb.nightWatchHold=0;nb.nightBlinked=false;nb.nightBlinkK=0;nb.nightWatchOld={st:nb.st,wp:nb.wp&&nb.wp.slice(),timer:nb.timer,dir:nb.dir,napping:!!nb.napping,tending:!!nb.tending};}if(nb.nightWatch){const u=nb.g.userData;if((greet||bq)&&!nb.nightBlinked){nb.nightWatchHold+=dt;if(nb.nightWatchHold>2.1||bq){nb.nightBlinkK=bq==='blink'?.5:nb.nightBlinkK+dt/1.8;const bk=clamp(nb.nightBlinkK,0,1),close=Math.sin(bk*Math.PI);for(const e of u.eyes)e.scale.y=Math.max(.05,1-close*.95);if(bk>=1){nb.nightBlinked=true;nb.nightBlinkK=1;}}}const doneGreet=nb.nightBlinked&&!bq,target=(clear||doneGreet)?0:1;nb.nightWatchK=lerp(nb.nightWatchK,target,Math.min(1,dt*(clear?1.7:3.4)));const dx=player.x-nb.x,dz=player.z-nb.z,want=Math.atan2(dx,dz),rel=clamp(want-nb.dir,-1.15,1.15);u.head.position.y=lerp(.67,1.09,nb.nightWatchK);u.head.position.z=lerp(.25,.1,nb.nightWatchK);u.head.rotation.x=lerp(.36,-.12,nb.nightWatchK);u.head.rotation.y=rel*nb.nightWatchK;u.earL.rotation.z=.18+nb.nightWatchK*.08;u.earR.rotation.z=-.18-nb.nightWatchK*.08;nb.g.position.set(nb.x,groundY(nb.x,nb.z),nb.z);nb.g.rotation.y=nb.dir;window._nightWatchDbg=(nb===mugi?'mugi':'sora')+'/'+(nb.nightBlinkK>0&&!nb.nightBlinked?'slow-blink':(clear||doneGreet)?'settle':greet?'greeting':'watch')+'/'+nb.nightWatchK.toFixed(2)+'/'+nb.nightWatchHold.toFixed(1)+'/'+nb.nightBlinkK.toFixed(2);if((clear||doneGreet)&&nb.nightWatchK<.025){const o=nb.nightWatchOld||{};nb.nightWatch=false;nb.st=o.st||'pause';nb.wp=o.wp||null;nb.timer=o.timer||1;nb.dir=o.dir??nb.dir;nb.napping=o.napping;nb.tending=o.tending;u.head.rotation.x=0;u.head.rotation.y=0;u.head.position.set(0,1.08,.1);u.earL.rotation.z=.18;u.earR.rotation.z=-.18;for(const e of u.eyes)e.scale.y=1;}return;}
  /* dawn emergence: step out of the house, stretch, then start the day */
  const ph2=phase();
  if(nb===sora&&nb.st==='sentinelGaze'){
@@ -2189,6 +2189,7 @@ if(Q.get('nextsnow')){player.x=-.3;player.z=-7.2;player.dir=Math.PI;}
 if(Q.get('playerbreath')){player.x=-.3;player.z=-5.2;player.dir=-Math.PI/2;}
 if(Q.get('playerpaws')){player.x=0;player.z=3.2;player.dir=Math.PI/2;}
 if(Q.get('nightwatch')){player.x=-.4;player.z=-9.2;player.dir=-Math.PI/2;mugi.x=-2.25;mugi.z=-10.1;mugi.dir=0;mugi.inside=false;mugi.op=1;applyOp(mugi);mugi.st='pause';sora.x=7;sora.z=-10;sora.dir=0;sora.inside=false;sora.op=1;applyOp(sora);sora.st='pause';}
+if(Q.get('nightblink')){player.x=-.4;player.z=-9.2;player.dir=-Math.PI/2;mugi.x=-2.25;mugi.z=-10.1;mugi.dir=0;mugi.inside=false;mugi.op=1;applyOp(mugi);mugi.st='pause';sora.x=7;sora.z=-10;sora.inside=false;sora.op=1;applyOp(sora);sora.st='pause';}
 if(Q.get('capcat')==='shot'){player.x=-3.6;player.z=-3;player.dir=Math.PI;}
 if(Q.get('frost')==='shot'){player.x=0;player.z=8;player.dir=Math.PI;}
 if(Q.get('windowcat')==='shot'){player.x=9;player.z=-10;player.dir=Math.PI;}
