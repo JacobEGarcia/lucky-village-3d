@@ -487,11 +487,19 @@ let flies;const FLYN=26;
 let petals;const PETN=40;const petData=[];
 (function(){const pos=new Float32Array(PETN*3);
  for(let i=0;i<PETN;i++){const[gx,gz]=GROVE[i%GROVE.length];
-  petData.push({x:gx+R(-2,2),y:R(1,4.5),z:gz+R(-2,2),vx:R(-.5,-.15),vy:R(.14,.3),ph:R(0,7)});
+  petData.push({x:gx+R(-2,2),y:R(1,4.5),z:gz+R(-2,2),vx:R(-.5,-.15),vy:R(.14,.3),ph:R(0,7),kx:0,ky:0,kz:0});
   pos[i*3]=petData[i].x;pos[i*3+1]=petData[i].y;pos[i*3+2]=petData[i].z;}
  const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.BufferAttribute(pos,3));
  petals=new THREE.Points(gg,new THREE.PointsMaterial({color:0xe8a8b0,size:.16,transparent:true,opacity:.9}));
  scene.add(petals);})();
+/* grove shakes: moving through a sakura canopy knocks a burst of petals loose */
+const groveKick=GROVE.map(()=>0);let kicks=0,kickRR=0;
+function kickTree(gi){const[gx,gz]=GROVE[gi];
+ for(let k=0;k<8;k++){const d=petData[(kickRR++)%PETN];
+  const an=R(0,6.28),rr=R(.3,1.6);
+  d.x=gx+Math.cos(an)*rr;d.y=R(2.4,4.4);d.z=gz+Math.sin(an)*rr;
+  d.kx=Math.cos(an)*R(.6,1.6);d.kz=Math.sin(an)*R(.6,1.6);d.ky=R(.3,.9);}
+ kicks++;}
 /* day butterflies - dusk hands off to the fireflies */
 const bflies=[];
 (function(){const anchors=[[0,-12],[-14,6],[18,4]];
@@ -619,7 +627,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x'));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks);},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1146,10 +1154,16 @@ function updRain(dt){
 function updFx(dt){
  const pos=petals.geometry.attributes.position;
  for(let i=0;i<PETN;i++){const d=petData[i];
-  d.x+=d.vx*dt+Math.sin(t*2+d.ph)*.2*dt;d.y-=d.vy*dt;d.z+=Math.cos(t*1.4+d.ph)*.15*dt;
-  if(d.y<.1){const[gx,gz]=GROVE[i%GROVE.length];d.x=gx+R(-2,2);d.y=R(2.5,4.5);d.z=gz+R(-2,2);}
+  d.x+=(d.vx+d.kx)*dt+Math.sin(t*2+d.ph)*.2*dt;d.y-=(d.vy+d.ky)*dt;d.z+=d.kz*dt+Math.cos(t*1.4+d.ph)*.15*dt;
+  const dec=Math.max(0,1-dt*2.4);d.kx*=dec;d.ky*=dec;d.kz*=dec;
+  if(d.y<.1){const[gx,gz]=GROVE[i%GROVE.length];d.x=gx+R(-2,2);d.y=R(2.5,4.5);d.z=gz+R(-2,2);d.kx=0;d.ky=0;d.kz=0;}
   pos.setXYZ(i,d.x,d.y,d.z);}
  pos.needsUpdate=true;
+ if(state==='play'&&player.moving){
+  for(let gi=0;gi<GROVE.length;gi++){
+   if(t<groveKick[gi])continue;
+   const[gx,gz]=GROVE[gi];
+   if(Math.hypot(player.x-gx,player.z-gz)<2.3){groveKick[gi]=t+1.4;kickTree(gi);break;}}}
  for(const f of furin){f.rotation.x=Math.sin(t*.83+f.userData.ph)*.06;f.rotation.z=Math.cos(t*.61+f.userData.ph)*.07;}
  if(state==='play'){chimeT-=dt;if(chimeT<0){tone(2093,.7,'sine',.018);setTimeout(()=>tone(2637,.5,'sine',.014),180);chimeT=R(16,36);}}
  if(flies.material.opacity>0){const fp=flies.geometry.attributes.position;
@@ -1242,6 +1256,7 @@ if(Q.has('fishat')){hide('menu');state='play';$('hud').classList.add('on');$('ba
  player.x=POND.x-POND.r-1.2;player.z=POND.z+1;setTimeout(()=>startFishing(),400);}
 const AT=Q.get('at');
 if(AT){const[a,b]=AT.split(',').map(Number);if(!isNaN(a)&&!isNaN(b)){hide('menu');state='play';player.x=a;player.z=b;}}
+if(Q.has('burst')){let bi=0,bd=1e9;for(let gi=0;gi<GROVE.length;gi++){const[gx,gz]=GROVE[gi];const dd=Math.hypot(player.x-gx,player.z-gz);if(dd<bd){bd=dd;bi=gi;}}kickTree(bi);}
 if(Q.get('close')==='1'){sora.x=player.x+.9;sora.z=player.z+.6;sora.st='sit';sora.timer=30;sora.wp=null;sora.napDay=day;sora.lastPh=phase();}
 if(Q.get('catchtest')){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');const _ct=()=>{fish.species=FISH.find(f=>f.id===Q.get('catchtest'))||FISH[0];fish.bx=POND.x;fish.bz=POND.z;land();};setTimeout(_ct,700);setInterval(_ct,1200);}
 if(Q.has('talk')){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');setTimeout(()=>talk(Q.get('talk')==='sora'?sora:mugi),700);}
