@@ -271,7 +271,7 @@ let waterMat;
  /* the leaping koi - dusk only, Sora's line made true */
  const leapKoi=new THREE.Mesh(new THREE.SphereGeometry(.28,9,7),mat(0xd8552f,.75));
  leapKoi.scale.set(1.55,.62,.62);leapKoi.visible=false;leapKoi.castShadow=true;scene.add(leapKoi);window._leapKoi=leapKoi;
- window._koiLeap={on:false,t0:0,next:LEAPFAST?0:6,x:0,z:0};
+ window._koiLeap={on:false,t0:0,next:0,x:0,z:0,eveDay:0,eligible:false,done:false,track:0};
  /* dawn mist over the pond */
  const mcv=document.createElement('canvas');mcv.width=mcv.height=128;
  const mg=mcv.getContext('2d');
@@ -553,7 +553,7 @@ const train=new THREE.Group(),trainCars=[];const trainS={on:false,k:0,day:0,watc
   for(let w=-1;w<=1;w++){const win=new THREE.Mesh(new THREE.PlaneGeometry(.34,.24),new THREE.MeshBasicMaterial({color:0xf2c76d}));win.position.set(w*.55,.07,.316);car.add(win);}
   car.position.x=i*2.32;train.add(car);trainCars.push(car);}train.position.set(-34,2.2,-22);train.visible=false;scene.add(train);}
 function updTrain(dt){const eve=phase()==='dusk'&&!raining();
- if(eve&&!trainS.on&&trainS.day!==day&&(p>.52||Q.has('train'))){trainS.on=true;trainS.k=0;trainS.day=day;train.visible=true;trainS.watched=false;}
+ if(eve&&!Q.has('koiplip')&&!trainS.on&&trainS.day!==day&&(p>.52||Q.has('train'))){trainS.on=true;trainS.k=0;trainS.day=day;train.visible=true;trainS.watched=false;}
  if(trainS.on){trainS.k=Q.get('train')==='shot'?.48:trainS.k+dt/7;train.position.x=lerp(-34,34,trainS.k);train.position.y=2.2+Math.sin(trainS.k*Math.PI)*.28;train.visible=true;
   const outside=!sora.inside&&sora.op>.5;if(outside&&!trainS.watched){trainS.watched=true;trainS.old={st:sora.st,wp:sora.wp&&sora.wp.slice(),timer:sora.timer};sora.st='trainWatch';sora.wp=null;}
   if(sora.st==='trainWatch'){sora.dir=Math.atan2(train.position.x-sora.x,train.position.z-sora.z);sora.g.rotation.y=sora.dir;sora.g.userData.head.rotation.x=-.16;window._trainWatch='watch';}
@@ -770,7 +770,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1545,6 +1545,7 @@ function updFx(dt){
   window._pawDbg=P.st;}
  /* koi drift - gather for the player, but learn Sora's shadow along the rim */
  const pdx=player.x-POND.x,pdz=player.z-POND.z;
+ if(Q.get('koiplip')==='shot'){sora.x=14;sora.z=3.3;sora.st='sit';sora.wp=null;}
  const sk=window._soraKoi=window._soraKoi||{q:0,near:null,stop:0,mouth:0,lastx:sora.x,lastz:sora.z};
  const sdist=Math.hypot(sora.x-POND.x,sora.z-POND.z),sstep=Q.get('koisora')==='trail'?.2:Math.hypot(sora.x-sk.lastx,sora.z-sk.lastz);sk.lastx=sora.x;sk.lastz=sora.z;
  if(Q.get('koisora')==='mouth'){sk.stop=3;sk.mouth=1;}
@@ -1616,18 +1617,18 @@ function updFx(dt){
    if(L.pk>=1){L.play='idle';L.pk=0;if(paw){paw.position.z=.3;paw.position.y=.08;}}
   }
   window._leafDbg=L.st+(L.st==='wait'?Math.round(L.t):'')+'/'+L.play+(L.played?'!':'');}
- /* dusk leaps: one koi arcs out of the pond every few breaths */
- {const kl=window._koiLeap,leapKoi=window._leapKoi;
-  if(phase()==='dusk'&&!raining()){
-   if(!kl.on&&t>kl.next){kl.on=true;kl.t0=t;const a=R(0,6.28),rr=R(1,3.2);
-    kl.x=POND.x+Math.cos(a)*rr;kl.z=POND.z+Math.sin(a)*rr*.85;ripple(kl.x,kl.z);}
-   if(kl.on){const k=(t-kl.t0)/.95;
-    if(k>=1){kl.on=false;leapKoi.visible=false;kl.next=t+(LEAPFAST?.8:R(2.5,6));ripple(kl.x,kl.z);
-     if(Math.hypot(player.x-kl.x,player.z-kl.z)<14)tone(230,.09,'sine',.022);}
-    else{leapKoi.visible=true;
-     leapKoi.position.set(kl.x+.5*k,.1+Math.sin(k*Math.PI)*.95,kl.z+.2*k);
-     leapKoi.rotation.z=Math.sin(k*Math.PI*2)*.45;}}}
-  else if(kl.on){kl.on=false;leapKoi.visible=false;kl.next=t+R(2,4);}}
+ /* rare dusk koi plip: at most one brief arc in an eligible evening */
+ {const kl=window._koiLeap,leapKoi=window._leapKoi,qa=Q.get('koiplip')==='shot',dusk=phase()==='dusk'&&!raining();
+  if(dusk&&kl.eveDay!==day){kl.eveDay=day;kl.eligible=qa||Math.random()<.18;kl.done=false;kl.next=t+(qa?0:R(28,88));}
+  if(dusk&&kl.eligible&&!kl.done&&!kl.on&&t>kl.next){kl.on=true;kl.t0=t;const a=qa?1.52:R(0,6.28),rr=qa?5.15:R(4.65,5.35);
+   kl.x=POND.x+Math.cos(a)*rr;kl.z=POND.z+Math.sin(a)*rr;kl.done=true;kl.track=0;}
+  if(kl.on){const k=qa?.52:(t-kl.t0)/.72;
+   if(k>=1){kl.on=false;leapKoi.visible=false;ripple(kl.x+.34,kl.z+.12);if(Math.hypot(player.x-kl.x,player.z-kl.z)<14)tone(260,.075,'sine',.018);}
+   else{leapKoi.visible=true;leapKoi.position.set(kl.x+.34*k,.08+Math.sin(k*Math.PI)*.48,kl.z+.12*k);leapKoi.rotation.z=Math.sin(k*Math.PI)*.58;
+    if(sRim&&!sMove){const want=Math.atan2(leapKoi.position.x-sora.x,leapKoi.position.z-sora.z),rel=clamp(want-sora.dir,-.62,.62);sora.g.userData.head.rotation.y=rel;kl.track=1;}}}
+  else if(!dusk){leapKoi.visible=false;kl.on=false;}
+  if(!kl.on&&kl.track){sora.g.userData.head.rotation.y*=Math.max(0,1-dt*5);if(Math.abs(sora.g.userData.head.rotation.y)<.01)kl.track=0;}
+  window._plipDbg=(kl.on?'arc':(kl.done?'done':(kl.eligible?'waiting':'rare-off')))+'/'+kl.eveDay+'/'+kl.track;}
  /* clear-night pond mist: fullest in the cold hour before dawn, gone after sunrise */
  const mw=clamp((p-.035)/.09,0,1);
  const pre=clamp(Math.min((p+.04)/.025,(.145-p)/.075),0,1),mo=(raining()?0:pre)*(.42-.18*mw);window._mo=mo;
@@ -1714,6 +1715,7 @@ requestAnimationFrame(frame);
 /* ---------- init hooks ---------- */
 if(Q.has('play')||AUTO){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');}
 if(Q.get('gaze')==='bridge'){sora.x=BRG.x;sora.z=BRG.z;sora.st='gaze';sora.dir=-1.57;sora.gazePh='dusk';sora.wp=null;sora.bolt=false;sora.duskGaze=false;}
+if(Q.get('koiplip')==='shot'){sora.x=14;sora.z=3.3;sora.st='sit';sora.timer=30;sora.wp=null;sora.napDay=day;sora.lastPh=phase();window._soraKoi={q:1,near:null,stop:3,mouth:1,lastx:sora.x,lastz:sora.z};player.x=7;player.z=3;}
 if(Q.get('scarecrow')==='shot'){player.x=-13;player.z=11;player.dir=-Math.PI/2;}
 if(Q.get('mist')==='shot'){player.x=4.8;player.z=-1;player.dir=Math.PI/2;}
 if(Q.has('train')){sora.x=8;sora.z=-8;sora.st='sit';sora.timer=30;sora.wp=null;sora.lastPh=phase();sora.inside=false;sora.op=1;}
