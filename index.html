@@ -294,7 +294,7 @@ let waterMat;
   m.rotation.x=-Math.PI/2;m.renderOrder=2;
   const sx=R(2.7,4.5),sz=R(1.45,2.5),a=R(0,6.28),rr=R(0,POND.r-Math.max(sx,sz)*.58-.45);
   m.position.set(POND.x+Math.cos(a)*rr,.19+i*.025,POND.z+Math.sin(a)*rr);
-  m.scale.set(sx,sz,1);m.userData={a:a,rr:rr,base:a,dr:(i%2?1:-1)*R(.015,.035),bob:R(0,6.28)};
+  m.scale.set(sx,sz,1);m.userData={a:a,rr:rr,base:a,dr:(i%2?1:-1)*R(.008,.018),bob:R(0,6.28),sx:sx,sz:sz,flow:R(.025,.055)};
   scene.add(m);_mists.push(m);}
 })();
 /* ---------- stream + taiko-bashi ---------- */
@@ -1672,9 +1672,11 @@ function updFx(dt){
   window._pawDbg=P.st;}
  /* koi drift - gather for the player, but learn Sora's shadow along the rim */
  const pdx=player.x-POND.x,pdz=player.z-POND.z;
+ if(Q.get('mist')==='shot'){player.x=8.5;player.z=3;player.dir=-Math.PI/2;}
  if(Q.get('hotaru')==='shot'){player.x=15;player.z=5;player.dir=Math.PI;}
  if(Q.get('basin')==='shot'){player.x=-6.4;player.z=3.3;player.dir=-Math.PI/2;}
- if(Q.get('hotaru')==='shot'){player.x=15;player.z=5;player.dir=Math.PI;}
+ if(Q.get('mist')==='shot'){player.x=8.5;player.z=3;player.dir=-Math.PI/2;}
+if(Q.get('hotaru')==='shot'){player.x=15;player.z=5;player.dir=Math.PI;}
 if(Q.get('basin')==='shot'){player.x=-6.4;player.z=3.3;player.dir=-Math.PI/2;}
 if(Q.get('well')==='shot'){player.x=-5;player.z=3;player.dir=-Math.PI/2;}
 if(Q.get('jizo')==='shot'){player.x=15;player.z=-1;player.dir=Math.PI/2;}
@@ -1778,13 +1780,13 @@ if(Q.get('koiplip')==='shot'){sora.x=14;sora.z=3.3;sora.st='sit';sora.wp=null;}
   window._plipDbg=(kl.on?'arc':(kl.done?'done':(kl.eligible?'waiting':'rare-off')))+'/'+kl.eveDay+'/'+kl.track;}
  /* clear-night pond mist: fullest in the cold hour before dawn, gone after sunrise */
  const mw=clamp((p-.035)/.09,0,1);
- const pre=clamp(Math.min((p+.04)/.025,(.145-p)/.075),0,1),mo=(raining()?0:pre)*(.42-.18*mw);window._mo=mo;
+ const pre=clamp(Math.min((p+.04)/.025,(.145-p)/.075),0,1),mo=(raining()?0:pre)*(.62-.28*mw);window._mo=mo;
  _mistMat.color.setRGB(lerp(.69,.94,mw),lerp(.76,.88,mw),lerp(.84,.72,mw));
  _mistMat.opacity=mo;_mistMat.visible=mo>.006;
- if(mo>0){for(const m of _mists){const u=m.userData;u.a+=u.dr*dt;
-  const drift=Math.sin(t*.055+u.bob)*.2;m.position.x=POND.x+Math.cos(u.a)*u.rr+Math.cos(u.base)*drift;
-  m.position.z=POND.z+Math.sin(u.a)*u.rr+Math.sin(u.base)*drift;}}
- window._mistDbg=(raining()?'rain-off':(mo>.02?'pond/'+mo.toFixed(2):'burned'));
+ if(mo>0){for(let i=0;i<_mists.length;i++){const m=_mists[i],u=m.userData;u.a+=u.dr*dt;
+  const drift=Math.sin(t*u.flow+u.bob)*.28,breath=1+Math.sin(t*.11+u.bob)*.045;m.position.x=POND.x+Math.cos(u.a)*u.rr+Math.cos(u.base)*drift;
+  m.position.z=POND.z+Math.sin(u.a)*u.rr+Math.sin(u.base)*drift;m.scale.set(u.sx*breath,u.sz*(2-breath),1);m.position.y=.15+i*.018+Math.sin(t*.13+u.bob)*.018;}}
+ window._mistDbg=(raining()?'rain-off':(mo>.02?'dawn-drift/'+mo.toFixed(2)+'/'+_mists.length:'burned'));
  /* furin: chimes when the player passes the stall corner, sways a little */
  const fu=stall.userData.furin;
  if(fu){
