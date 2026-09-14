@@ -116,6 +116,7 @@ const AUTO=Q.has('auto'),MUTE=Q.has('mute'),WARP=Math.min(60,Math.max(1,+Q.get('
 const PIN={dawn:.06,day:.3,dusk:.55,night:.82}[Q.get('time')||''] ?? null;
 const NORFIX=Q.has('nor')?parseFloat(Q.get('nor')):null;
 const LEAPFAST=Q.get('leap')==='1';
+const METFAST=Q.get('meteor')==='1',METPIN=Q.get('meteor')==='2';
 const PLC=Q.get('place');
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,R=(a,b)=>a+Math.random()*(b-a);
 const GOTH='"Avenir Next","Futura","Century Gothic",sans-serif';
@@ -636,7 +637,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks);},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' met='+mets+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1272,6 +1273,38 @@ function updNoren(dt){
   const sw=.5+.5*Math.sin(t*1.1+ph)+.18*Math.sin(t*2.3+ph*2);
   s.rotation.x=NORFIX!=null?NORFIX:-Math.min(.2,Math.max(0,.13*w*sw));}
 }
+/* shooting stars - rare streaks on clear nights, same line language as the rain */
+const metGeo=new THREE.BufferGeometry(),metPos=new Float32Array(6);
+metGeo.setAttribute('position',new THREE.BufferAttribute(metPos,3));
+const metMat=new THREE.LineBasicMaterial({color:0xf2e6c4,transparent:true,opacity:0,fog:false,blending:THREE.AdditiveBlending,depthWrite:false});
+const meteor=new THREE.Line(metGeo,metMat);meteor.frustumCulled=false;meteor.visible=false;scene.add(meteor);
+const mhcv=document.createElement('canvas');mhcv.width=mhcv.height=64;
+const mhg=mhcv.getContext('2d');
+const mhgr=mhg.createRadialGradient(32,32,1,32,32,32);
+mhgr.addColorStop(0,'rgba(255,248,228,.95)');mhgr.addColorStop(.35,'rgba(242,230,196,.5)');mhgr.addColorStop(1,'rgba(242,230,196,0)');
+mhg.fillStyle=mhgr;mhg.fillRect(0,0,64,64);
+const metHead=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(mhcv),transparent:true,opacity:0,fog:false,blending:THREE.AdditiveBlending,depthWrite:false}));
+metHead.scale.setScalar(.9);metHead.visible=false;scene.add(metHead);
+const met={on:false,t0:0,next:METFAST?0:9,sx:0,sy:0,sz:0,dx:0,dy:0,dz:0};let mets=0;
+function updMeteor(dt){
+ if(phase()==='night'&&!raining()){
+  if(METPIN&&!met.on){met.on=true;met.t0=t-.375;mets++;
+   met.sx=-14;met.sy=3.8;met.sz=-27;met.dx=15;met.dy=-2;met.dz=1;}
+  if(!met.on&&t>met.next){met.on=true;met.t0=t;mets++;
+   met.sx=R(-24,16);met.sy=R(3,4.6);met.sz=R(-30,-22);
+   const a=R(-.6,.6);met.dx=R(12,20)*Math.cos(a);met.dy=-R(1.5,3);met.dz=R(2,5)*Math.sin(a);}
+  if(met.on){const k=METPIN?.5:(t-met.t0)/.75;
+   if(k>=1&&!METPIN){met.on=false;meteor.visible=false;metHead.visible=false;metMat.opacity=0;metHead.material.opacity=0;met.next=t+(METFAST?1.2:R(16,38));}
+   else{meteor.visible=true;metHead.visible=true;metMat.opacity=Math.sin(k*Math.PI);metHead.material.opacity=Math.sin(k*Math.PI);
+    const h=Math.min(1,k*1.25),tl=Math.max(0,k*1.25-.22);
+    metPos[0]=met.sx+met.dx*tl;metPos[1]=met.sy+met.dy*tl;metPos[2]=met.sz+met.dz*tl;
+    metPos[3]=met.sx+met.dx*h;metPos[4]=met.sy+met.dy*h;metPos[5]=met.sz+met.dz*h;
+    metGeo.attributes.position.needsUpdate=true;
+    const v=new THREE.Vector3(metPos[3],metPos[4],metPos[5]).project(cam);
+    metHead.position.set(metPos[3],metPos[4],metPos[5]);
+    window._metXY=(v.x*50+50).toFixed(0)+','+(-v.y*50+50).toFixed(0);}}}
+ else if(met.on){met.on=false;meteor.visible=false;metHead.visible=false;metMat.opacity=0;metHead.material.opacity=0;met.next=t+R(4,8);}
+}
 /* ---------- main loop ---------- */
 let last=performance.now();
 function frame(now){
@@ -1281,7 +1314,7 @@ function frame(now){
  updDay();
  if(state!=='menu'){updPlayer(dt);updNeighbor(mugi,MUGIWPS,dt);updNeighbor(sora,SORAWPS,dt);updFish(dt);updAct();}
  ghostFollow();
- updFx(dt);updRain(dt);updHig(dt);updBird(dt);updNoren(dt);updCam(dt);drawFloats();
+ updFx(dt);updRain(dt);updHig(dt);updBird(dt);updNoren(dt);updMeteor(dt);updCam(dt);drawFloats();
  renderer.render(scene,cam);
 }
 requestAnimationFrame(frame);
