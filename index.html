@@ -488,7 +488,7 @@ let starPts;
  starPts=new THREE.Points(gg,new THREE.PointsMaterial({color:0xf2e6c4,size:.5,fog:false,transparent:true,opacity:0}));
  scene.add(starPts);})();
 /* fireflies */
-let flies;const FLYN=26;const flyData=[];let flyRef;
+let flies;const FLYN=26;const flyData=[];let flyRef;let stillT=0,curQ=0,curN=0,lastpx=0,lastpz=0;
 (function(){const pos=new Float32Array(FLYN*3);
  /* fireflies gather over the water at night: anchors along the stream + pond rim, a few roam the village */
  const SA={x:19.2,z:-4},SB={x:27.6,z:-7.4};
@@ -660,7 +660,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1253,9 +1253,21 @@ function updFx(dt){
    for(let i=0;i<n;i++)setTimeout(()=>tone(f,.045,'square',.006),i*70);
    crikT=R(5,13);}}
  if(flies.material.opacity>0){const fp=flies.geometry.attributes.position;
+  /* curiosity: stand still at the water at night and a few drift over for a look */
+  const pv=Math.hypot(player.x-lastpx,player.z-lastpz);lastpx=player.x;lastpz=player.z;
+  if(state==='play'&&(pv<dt*.6||Q.has('cur')))stillT+=dt;else stillT=0;
+  let nearW=Math.hypot(player.x-POND.x,player.z-POND.z)<POND.r+4.5;
+  if(!nearW){const ppx=player.x-19.2,ppz=player.z+4,al=Math.max(0,Math.min(9.06,ppx*.927+ppz*(-.375)));nearW=Math.hypot(player.x-(19.2+al*.927),player.z-(-4+al*(-.375)))<4;}
+  const want=nearW&&(stillT>3||Q.has('cur'))?1:0;
+  curQ+=(want-curQ)*Math.min(1,dt*(want?.45:1.4));curN=0;
   for(let i=0;i<FLYN;i++){const d=flyData[i];
-   fp.setX(i,d.ax+Math.sin(t*d.s1+d.p1)*d.rx);
-   fp.setZ(i,d.az+Math.cos(t*d.s2+d.p2)*d.rz);
+   let bx=d.ax,bz=d.az;
+   if(curQ>.02&&i<22&&curN<4){const dd=Math.hypot(player.x-bx,player.z-bz);
+    if(dd<9){curN++;const ha=d.p1+t*.12,hr=1.4+(i%4)*.5;
+     const q=curQ*Math.min(1,(9-dd)/5+.35);
+     bx+=(player.x+Math.cos(ha)*hr-bx)*q;bz+=(player.z+Math.sin(ha)*hr-bz)*q;}}
+   fp.setX(i,bx+Math.sin(t*d.s1+d.p1)*d.rx);
+   fp.setZ(i,bz+Math.cos(t*d.s2+d.p2)*d.rz);
    fp.setY(i,clamp(d.y0+Math.sin(t*.8+d.p2)*d.ya,.3,2.6));}
   fp.needsUpdate=true;
   if(_glimMat.opacity>0){
@@ -1408,6 +1420,7 @@ if(Q.has('fishat')){hide('menu');state='play';$('hud').classList.add('on');$('ba
  player.x=POND.x-POND.r-1.2;player.z=POND.z+1;setTimeout(()=>startFishing(),400);}
 const AT=Q.get('at');
 if(AT){const[a,b]=AT.split(',').map(Number);if(!isNaN(a)&&!isNaN(b)){hide('menu');state='play';player.x=a;player.z=b;}}
+if(Q.has('cur')){stillT=99;curQ=.85;}
 if(Q.has('burst')){let bi=0,bd=1e9;for(let gi=0;gi<GROVE.length;gi++){const[gx,gz]=GROVE[gi];const dd=Math.hypot(player.x-gx,player.z-gz);if(dd<bd){bd=dd;bi=gi;}}kickTree(bi);}
 if(Q.get('close')==='1'){sora.x=player.x+.9;sora.z=player.z+.6;sora.st='sit';sora.timer=30;sora.wp=null;sora.napDay=day;sora.lastPh=phase();}
 if(Q.get('catchtest')){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');const _ct=()=>{fish.species=FISH.find(f=>f.id===Q.get('catchtest'))||FISH[0];fish.bx=POND.x;fish.bz=POND.z;land();};setTimeout(_ct,700);setInterval(_ct,1200);}
