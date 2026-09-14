@@ -477,9 +477,17 @@ let starPts;
  starPts=new THREE.Points(gg,new THREE.PointsMaterial({color:0xf2e6c4,size:.5,fog:false,transparent:true,opacity:0}));
  scene.add(starPts);})();
 /* fireflies */
-let flies;const FLYN=26;
+let flies;const FLYN=26;const flyData=[];
 (function(){const pos=new Float32Array(FLYN*3);
- for(let i=0;i<FLYN;i++){pos[i*3]=R(-20,20);pos[i*3+1]=R(.4,2.2);pos[i*3+2]=R(-16,18);}
+ /* fireflies gather over the water at night: anchors along the stream + pond rim, a few roam the village */
+ const SA={x:19.2,z:-4},SB={x:27.6,z:-7.4};
+ for(let i=0;i<FLYN;i++){
+  let ax,az;
+  if(i<15){const s=Math.random();ax=SA.x+(SB.x-SA.x)*s+R(-1.6,1.6);az=SA.z+(SB.z-SA.z)*s+R(-1.6,1.6);}
+  else if(i<22){const an=R(0,6.28),rr=R(4.5,7.6);ax=POND.x+Math.cos(an)*rr;az=POND.z+Math.sin(an)*rr;}
+  else{ax=R(-20,20);az=R(-16,18);}
+  flyData.push({ax:ax,az:az,rx:R(.7,1.9),rz:R(.7,1.9),s1:R(.25,.6),s2:R(.2,.5),p1:R(0,6.28),p2:R(0,6.28),y0:R(.5,2.1),ya:R(.2,.6)});
+  pos[i*3]=ax;pos[i*3+1]=1;pos[i*3+2]=az;}
  const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.BufferAttribute(pos,3));
  flies=new THREE.Points(gg,new THREE.PointsMaterial({color:0xf0dc8c,size:.22,transparent:true,opacity:0}));
  scene.add(flies);})();
@@ -1167,8 +1175,10 @@ function updFx(dt){
  for(const f of furin){f.rotation.x=Math.sin(t*.83+f.userData.ph)*.06;f.rotation.z=Math.cos(t*.61+f.userData.ph)*.07;}
  if(state==='play'){chimeT-=dt;if(chimeT<0){tone(2093,.7,'sine',.018);setTimeout(()=>tone(2637,.5,'sine',.014),180);chimeT=R(16,36);}}
  if(flies.material.opacity>0){const fp=flies.geometry.attributes.position;
-  for(let i=0;i<FLYN;i++){fp.setX(i,fp.getX(i)+Math.sin(t*.9+i*2.1)*dt*.5);
-   fp.setY(i,clamp(fp.getY(i)+Math.cos(t*1.1+i*1.3)*dt*.35,.3,2.6));}
+  for(let i=0;i<FLYN;i++){const d=flyData[i];
+   fp.setX(i,d.ax+Math.sin(t*d.s1+d.p1)*d.rx);
+   fp.setZ(i,d.az+Math.cos(t*d.s2+d.p2)*d.rz);
+   fp.setY(i,clamp(d.y0+Math.sin(t*.8+d.p2)*d.ya,.3,2.6));}
   fp.needsUpdate=true;}
  for(const b of bflies){const u=b.userData,op=Math.max(0,1-dark()*1.6);
   u.wm.opacity=op;if(op<=0){b.visible=false;continue;}b.visible=true;
