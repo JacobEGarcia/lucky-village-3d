@@ -774,9 +774,10 @@ const bflies=[];
 /* last-light lantern moths: a small autumn halo around the village stone light */
 const lanternMoths=[];
 (function(){for(let i=0;i<9;i++){const g=new THREE.Group(),wm=new THREE.MeshBasicMaterial({color:i%3?0xe2d1aa:0xc8b98f,side:THREE.DoubleSide,transparent:true,opacity:0,depthWrite:false});
- const a=new THREE.Mesh(new THREE.PlaneGeometry(.18,.26),wm),b=a.clone();a.position.x=-.07;b.position.x=.07;g.add(a,b);g.userData={i:i,wm:wm,a:a,b:b,ph:i/9*6.283,r:R(.48,1.2),sp:R(.55,.9),y:R(1.1,2.25)};scene.add(g);lanternMoths.push(g);}})();
+ const ws=new THREE.Shape();ws.moveTo(0,0);ws.quadraticCurveTo(.19,.03,.16,.19);ws.quadraticCurveTo(.07,.31,0,.13);ws.lineTo(0,0);
+ const a=new THREE.Mesh(new THREE.ShapeGeometry(ws,4),wm),b=a.clone();b.scale.x=-1;const body=new THREE.Mesh(new THREE.CylinderGeometry(.014,.022,.19,6),new THREE.MeshBasicMaterial({color:0x665849,transparent:true,opacity:0}));body.rotation.x=Math.PI/2;body.position.z=.03;g.add(a,b,body);g.scale.setScalar(.82+R(0,.35));g.userData={i:i,wm:wm,body:body,a:a,b:b,ph:i/9*6.283,r:R(.48,1.2),sp:R(.55,.9),y:R(1.1,2.25)};scene.add(g);lanternMoths.push(g);}})();
 function updLanternMoths(){const autumn=Q.has('autumn')||((day-1)%24>=12&&(day-1)%24<18),last=phase()==='dusk'&&!raining()?clamp(1-Math.abs(p-.585)/.09,0,1):0,q=Q.get('moths')==='shot'?1:(autumn?last:0),L=lanterns[4].position;
- for(const g of lanternMoths){const u=g.userData,ang=t*u.sp+u.ph,rr=u.r*(.82+.18*Math.sin(t*.37+u.ph));g.visible=q>.02;u.wm.opacity=q*(.48+.35*Math.sin(t*2.1+u.ph)*.5+.17);g.position.set(L.x+Math.cos(ang)*rr,u.y+Math.sin(t*1.2+u.ph)*.25,L.z+Math.sin(ang)*rr*.58);g.rotation.y=-ang;const flap=Math.sin(t*18+u.ph)*.8;u.a.rotation.y=flap;u.b.rotation.y=-flap;}
+ for(const g of lanternMoths){const u=g.userData,ang=t*u.sp+u.ph,rr=u.r*(.82+.18*Math.sin(t*.37+u.ph));g.visible=q>.02;u.wm.opacity=q*(.42+.28*Math.sin(t*2.1+u.ph)*.5+.14);u.body.material.opacity=q*.62;g.position.set(L.x+Math.cos(ang)*rr,u.y+Math.sin(t*1.2+u.ph)*.25,L.z+Math.sin(ang)*rr*.58);g.rotation.y=-ang;const flap=Math.sin(t*18+u.ph)*.8;u.a.rotation.y=flap;u.b.rotation.y=-flap;u.a.rotation.z=.12;u.b.rotation.z=-.12;}
  window._mothDbg=(q>.02?'halo':'off')+'/'+q.toFixed(2)+'/'+lanternMoths.filter(g=>g.visible).length;}
 /* one clear-evening dragonfly: lacquer-dark body, glass wings, no swarm */
 const dragon=new THREE.Group(),dragonWing=new THREE.MeshBasicMaterial({color:0xd8e5df,transparent:true,opacity:.48,side:THREE.DoubleSide,depthWrite:false});
