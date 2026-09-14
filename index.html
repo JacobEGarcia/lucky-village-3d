@@ -533,9 +533,12 @@ function makeLantern(x,z){
  const box=new THREE.Mesh(new THREE.BoxGeometry(.5,.4,.5),mat(0x9a9aa2,.85));box.position.y=1.24;box.castShadow=true;g.add(box);
  const pane=new THREE.Mesh(new THREE.BoxGeometry(.52,.2,.52),new THREE.MeshBasicMaterial({color:0x3a3a42}));pane.position.y=1.24;g.add(pane);
  const roof=new THREE.Mesh(new THREE.ConeGeometry(.5,.34,4),mat(0x7a7a84,.9));roof.position.y=1.6;roof.rotation.y=Math.PI/4;g.add(roof);
+ /* thin rime catches only the upper cap edges */
+ const frostM=new THREE.MeshBasicMaterial({color:0xdde9e8,transparent:true,opacity:0,depthWrite:false});
+ const frost=[];for(let i=0;i<4;i++){const edge=new THREE.Mesh(new THREE.BoxGeometry(.64,.028,.028),frostM);const side=i<2;edge.position.set(side?0:(i===2?-.31:.31),1.72,side?(i===0?-.31:.31):0);edge.rotation.y=side?0:Math.PI/2;g.add(edge);frost.push(edge);}
  const jewel=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),stone);jewel.position.y=1.85;g.add(jewel);
  const lite=new THREE.PointLight(0xffc86a,0,5,2);lite.position.y=1.3;g.add(lite);
- g.userData.pane=pane;g.userData.lite=lite;
+ g.userData.pane=pane;g.userData.lite=lite;g.userData.frost=frost;g.userData.frostM=frostM;
  g.position.set(x,0,z);scene.add(g);lanterns.push(g);return g;
 }
 makeLantern(-2.4,14);makeLantern(2.4,10);makeLantern(-2.4,4);makeLantern(2.4,-2);makeLantern(-3.6,-9.4);makeLantern(3.6,-9.4);
@@ -811,7 +814,7 @@ function updPlayer(dt){
 const camPos=new THREE.Vector3(0,8,17),camTgt=new THREE.Vector3(0,1,8);
 let camYaw=0,dragId=null,dragLastX=0,dragMoved=0,snapCam=!!(Q.get('yaw')||Q.get('at'));
 if(Q.get('yaw'))camYaw=+Q.get('yaw')||0;
-if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+' window='+(window._windowDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' kite='+(window._kiteDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' wash='+(window._laundryDbg||'x')+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
+if(Q.has('dbg'))setInterval(()=>{document.body.setAttribute('data-dbg','p='+player.x.toFixed(1)+','+player.z.toFixed(1)+' cam='+cam.position.x.toFixed(1)+','+cam.position.y.toFixed(1)+','+cam.position.z.toFixed(1)+' yaw='+camYaw.toFixed(2)+' state='+state+' op4='+(sakuras[4].userData.op===undefined?'u':sakuras[4].userData.op.toFixed(2))+' catvis='+player.g.visible+' caty='+player.g.position.y.toFixed(2)+' mugi='+mugi.x.toFixed(1)+','+mugi.z.toFixed(1)+' mrot='+mugi.g.rotation.x.toFixed(2)+' mtail='+mugi.g.userData.tail.rotation.z.toFixed(2)+' sora='+sora.x.toFixed(1)+','+sora.z.toFixed(1)+' sst='+sora.st+' shrine='+(window._shrineDbg||'x')+' glance='+(window._glanceDbg||'x')+' dragon='+(window._dragonDbg||'x')+'/'+(window._soraDragon||'x')+' rainw='+(sora.rainWatch?'watch':(sora.rainGo?'trot':'no'))+' puddle='+(window._puddleDbg||'x')+'/'+puddles.filter(q=>q.visible).length+' nap='+(window._napDbg||'x')+'/'+(window._napCic||0)+' mst='+mugi.st+' rain='+(raining()?1:0)+' mvis='+(mugi.g.visible?1:0)+' msl='+mugi.sleepT.toFixed(1)+' k0='+_koi[0].position.x.toFixed(1)+','+_koi[0].position.z.toFixed(1)+' skoi='+(window._soraKoiDbg||'x')+' plip='+(window._plipDbg||'x')+' kot='+(window._koiTurns||0)+' leaf='+(window._leafDbg||'x')+' lplay='+(window._leafPlay?window._leafPlay.n:0)+' paw='+(window._pawDbg||'x')+' ph='+phase()+' hig='+higT.toFixed(1)+' bird='+birdT.toFixed(1)+' sp='+ (window._sparrowDbg||'x')+' train='+(window._trainDbg||'x')+' window='+(window._windowDbg||'x')+' frost='+(window._frostDbg||'x')+'/'+(window._trainWatch||'x')+' catx='+player.g.position.x.toFixed(1)+','+player.g.position.z.toFixed(1)+' n0='+(norenStrips[0]?norenStrips[0].rotation.x.toFixed(3):'x')+' kicks='+kicks+' ging='+ (window._gingkoDbg||'x')+' kite='+(window._kiteDbg||'x')+' gpounce='+(window._gPounceDbg||'x')+'/'+(sora.leafPounceDay||0)+' wash='+(window._laundryDbg||'x')+' fur='+furch+'/'+windNow().toFixed(2)+' lap='+laps+'/'+lapT.toFixed(1)+' crk='+criks+'/'+crikT.toFixed(0)+' met='+mets+' mist='+(window._mistDbg||'x')+' cur='+curQ.toFixed(2)+'/'+curN+' glm='+(flyRef?flyRef.filter(g=>g.visible).length+'/'+Math.round((window._glimMat?_glimMat.opacity:0)*100):'x')+' fmass='+(window._flyMassDbg||'x')+'/'+(window._flyStrag||'x')+(meteor.visible?'@'+window._metXY:''));},500);
 function updCam(dt){
  let want,tgt;
  if(fish.mode==='wait'||fish.mode==='bite'||fish.mode==='cast'||fish.mode==='reel'){
@@ -1328,8 +1331,9 @@ function updDay(){
  petals.material.opacity=lerp(.9,.15,dk);
  waterMat.color.setRGB(lerp(.17,.09,dk),lerp(.27,.17,dk),lerp(.38,.36,dk));
  /* lanterns + windows + stall lamp */
- for(const l of lanterns){l.userData.lite.intensity=dk*3;
-  l.userData.pane.material.color.setHex(dk>.3?0xf4c96a:0x3a3a42);}
+ const winter=Q.has('winter')||((day-1)%24)>=18,frostQ=winter?clamp((.18-p)/.11,0,1):0;
+ for(const l of lanterns){l.userData.lite.intensity=dk*3;l.userData.pane.material.color.setHex(dk>.3?0xf4c96a:0x3a3a42);l.userData.frostM.opacity=frostQ*.78;l.userData.frostM.visible=frostQ>.01;}
+ window._frostDbg=(winter?'winter':'off')+'/'+frostQ.toFixed(2)+'/'+lanterns.length;
  house1.userData.lite.intensity=dk*1.15;house1.userData.win.material.color.setHex(dk>.55?0xc8a76a:0x7a8a96);
  const duskWarm=clamp((p-.48)/.1,0,1)*clamp((.76-p)/.08,0,1);
  house2.userData.lite.intensity=duskWarm*2.7;house2.userData.win.material.color.setHex(duskWarm>.08?0xf4c96a:0x7a8a96);
@@ -1589,7 +1593,8 @@ function updFx(dt){
   window._pawDbg=P.st;}
  /* koi drift - gather for the player, but learn Sora's shadow along the rim */
  const pdx=player.x-POND.x,pdz=player.z-POND.z;
- if(Q.get('windowcat')==='shot'){player.x=9;player.z=-10;player.dir=Math.PI;}
+ if(Q.get('frost')==='shot'){player.x=0;player.z=8;player.dir=Math.PI;}
+if(Q.get('windowcat')==='shot'){player.x=9;player.z=-10;player.dir=Math.PI;}
 if(Q.get('laundry')==='shot'){player.x=-1;player.z=-5;player.dir=Math.PI;}
 if(Q.get('kite')==='shot'){player.x=-1;player.z=11;player.dir=-Math.PI/2;}
 if(Q.get('koiplip')==='shot'){sora.x=14;sora.z=3.3;sora.st='sit';sora.wp=null;}
@@ -1762,6 +1767,7 @@ requestAnimationFrame(frame);
 /* ---------- init hooks ---------- */
 if(Q.has('play')||AUTO){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');}
 if(Q.get('gaze')==='bridge'){sora.x=BRG.x;sora.z=BRG.z;sora.st='gaze';sora.dir=-1.57;sora.gazePh='dusk';sora.wp=null;sora.bolt=false;sora.duskGaze=false;}
+if(Q.get('frost')==='shot'){player.x=0;player.z=8;player.dir=Math.PI;}
 if(Q.get('windowcat')==='shot'){player.x=9;player.z=-10;player.dir=Math.PI;}
 if(Q.get('laundry')==='shot'){player.x=-1;player.z=-5;player.dir=Math.PI;}
 if(Q.get('kite')==='shot'){player.x=-1;player.z=11;player.dir=-Math.PI/2;}
