@@ -80,7 +80,7 @@ h1 .latin{display:block;font-family:var(--goth);font-weight:300;font-size:clamp(
 #joy{position:fixed;left:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:6;width:104px;height:104px;border-radius:50%;border:1px solid rgba(217,164,65,.3);background:rgba(10,10,20,.25);display:none;touch-action:none}
 #joy.on{display:block}
 #joy .nub{position:absolute;left:50%;top:50%;width:44px;height:44px;border-radius:50%;background:rgba(217,164,65,.35);border:1px solid rgba(217,164,65,.6);transform:translate(-50%,-50%)}
-</style>
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}html[data-motion=reduced] *,html[data-motion=reduced] *:before,html[data-motion=reduced] *:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}</style>
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -112,7 +112,8 @@ h1 .latin{display:block;font-family:var(--goth);font-weight:300;font-size:clamp(
 import * as THREE from 'three';
 const Q=new URLSearchParams(location.search), $=id=>document.getElementById(id);
 window.onerror=(m,src,l,c)=>{document.body.setAttribute('data-err',m+' @'+l+':'+c);};
-const AUTO=Q.has('auto'),MUTE=Q.has('mute'),WARP=Math.min(60,Math.max(1,+Q.get('warp')||1)),HOLDSTRETCH=Q.has('holdstretch');
+const AUTO=Q.has('auto'),WARP=Math.min(60,Math.max(1,+Q.get('warp')||1)),HOLDSTRETCH=Q.has('holdstretch');
+const PREFKEY='lucky-village-3d-prefs-v1';let storedPrefs={};try{storedPrefs=JSON.parse(localStorage.getItem(PREFKEY)||'{}')||{}}catch(e){}const systemReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;let MUTE=Q.has('mute')?true:Q.get('sound')==='on'?false:storedPrefs.mute??false;let REDUCED=Q.get('motion')==='reduced'?true:Q.get('motion')==='full'?false:storedPrefs.reduced??systemReduced;let QUALITY=Q.get('quality')==='low'?'low':Q.get('quality')==='high'?'high':storedPrefs.quality||'high';function savePrefs(){try{localStorage.setItem(PREFKEY,JSON.stringify({mute:MUTE,reduced:REDUCED,quality:QUALITY}))}catch(e){}}if(Q.has('mute')||Q.has('sound')||Q.has('motion')||Q.has('quality'))savePrefs();document.documentElement.dataset.motion=REDUCED?'reduced':'full';
 const PIN={dawn:.06,day:.3,dusk:.55,night:.82}[Q.get('time')||''] ?? (Q.get('p')?+Q.get('p'):null);
 const NORFIX=Q.has('nor')?parseFloat(Q.get('nor')):null;
 const LEAPFAST=Q.get('leap')==='1';
@@ -174,8 +175,8 @@ function updBird(dt){
 /* ---------- renderer / scene ---------- */
 const canvas=$('c');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.setPixelRatio(QUALITY==='low'?1:Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=QUALITY!=='low';renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
 const scene=new THREE.Scene();
@@ -1217,7 +1218,7 @@ function updCam(dt){
   tgt=new THREE.Vector3(player.x-Math.sin(camYaw)*ahead,1,player.z-Math.cos(camYaw)*ahead);
  }
  if(snapCam){camPos.copy(want);camTgt.copy(tgt);snapCam=false;}
- camPos.lerp(want,Math.min(1,dt*3.2));camTgt.lerp(tgt,Math.min(1,dt*3.6));
+ if(REDUCED){camPos.copy(want);camTgt.copy(tgt);}else{camPos.lerp(want,Math.min(1,dt*3.2));camTgt.lerp(tgt,Math.min(1,dt*3.6));}
  cam.position.copy(camPos);cam.lookAt(camTgt);
  sakuraFade();
 }
@@ -2294,10 +2295,11 @@ function updMeteor(dt){
  else if(met.on){met.on=false;meteor.visible=false;metHead.visible=false;metMat.opacity=0;metHead.material.opacity=0;met.next=t+R(4,8);}
 }
 /* ---------- main loop ---------- */
-let last=performance.now();
+let last=performance.now(),backgroundPaused=document.hidden;function syncVisibility(){backgroundPaused=document.hidden;last=performance.now();window._pauseDbg=backgroundPaused?'background-paused':'foreground-resumed';if(backgroundPaused&&AC?.state==='running')AC.suspend();}document.addEventListener('visibilitychange',syncVisibility);
 function frame(now){
  requestAnimationFrame(frame);
- const dt=Math.min(.05,(now-last)/1000)*WARP;last=now;t+=dt;
+ if(backgroundPaused){last=now;return;}
+ const rawdt=Math.min(.05,(now-last)/1000),dt=rawdt*WARP;last=now;t+=dt;
  if(PIN!=null)p=PIN;else{p+=dt/DAY_LEN;if(p>=1){p-=1;day++;rollRain();basket={n:0,v:0};save();updHUD();}}
  updDay();updWishWake();
  if(state!=='menu'){updPlayer(dt);updNeighbor(mugi,MUGIWPS,dt);updNeighbor(sora,SORAWPS,dt);updFish(dt);updAct();}
@@ -2306,6 +2308,7 @@ function frame(now){
  renderer.render(scene,cam);
 }
 requestAnimationFrame(frame);
+if(Q.has('dbg')){window.__reliability={get state(){return{time:t,backgroundPaused,last,mute:MUTE,reduced:REDUCED,quality:QUALITY}},syncVisibility};setInterval(()=>document.body.setAttribute('data-reliability','motion='+(REDUCED?'reduced':'full')+' quality='+QUALITY+' mute='+(MUTE?1:0)+' visibility='+(backgroundPaused?'paused':'live')+' pause='+(window._pauseDbg||'none')),400);}
 /* ---------- init hooks ---------- */
 if(Q.has('play')||AUTO){hide('menu');state='play';$('hud').classList.add('on');$('bar').classList.add('on');}
 if(Q.get('regular')){p=.17;player.x=-.2;player.z=-8.7;player.dir=Math.PI;}
